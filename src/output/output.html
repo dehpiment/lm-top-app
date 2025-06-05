@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveMestre Overlay - Output</title>
+    <link rel="stylesheet" href="output.css">
+</head>
+<body>
+    <!-- Canvas principal 1920x1080 -->
+    <div class="overlay-canvas" id="overlayCanvas">
+        
+        <!-- Background Video Container -->
+        <div class="background-container" id="backgroundContainer">
+            <video class="background-video" id="backgroundVideo" muted>
+                <source id="backgroundSource" src="" type="video/webm">
+            </video>
+        </div>
+
+        <!-- Overlay Content -->
+        <div class="overlay-content" id="overlayContent">
+            
+            <!-- Score Display -->
+            <div class="score-overlay" id="scoreOverlay">
+                <div class="score-container">
+                    <div class="team-section team-home">
+                        <div class="team-name" id="homeTeamName">TIME CASA</div>
+                        <div class="team-score" id="homeScore">0</div>
+                    </div>
+                    
+                    <div class="vs-section">
+                        <div class="vs-text">VS</div>
+                    </div>
+                    
+                    <div class="team-section team-away">
+                        <div class="team-name" id="awayTeamName">TIME VISITANTE</div>
+                        <div class="team-score" id="awayScore">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clock Display -->
+            <div class="clock-overlay" id="clockOverlay">
+                <div class="clock-container">
+                    <div class="clock-time" id="clockTime">00:00</div>
+                    <div class="clock-period" id="clockPeriod">1º TEMPO</div>
+                </div>
+            </div>
+
+            <!-- Additional Info Overlay -->
+            <div class="info-overlay" id="infoOverlay">
+                <div class="info-container">
+                    <div class="live-indicator">
+                        <div class="live-dot"></div>
+                        <span>AO VIVO</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sponsors Carousel -->
+            <div class="sponsors-overlay" id="sponsorsOverlay" style="display: none;">
+                <div class="sponsor-container">
+                    <div class="sponsor-logo" id="currentSponsor">
+                        <img id="sponsorImage" src="" alt="Patrocinador">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Positioning Controls (only visible in edit mode) -->
+        <div class="positioning-overlay" id="positioningOverlay" style="display: none;">
+            <div class="position-handle score-handle" data-element="scoreOverlay">
+                <span>📊 PLACAR</span>
+            </div>
+            <div class="position-handle clock-handle" data-element="clockOverlay">
+                <span>⏰ TEMPO</span>
+            </div>
+            <div class="position-handle info-handle" data-element="infoOverlay">
+                <span>ℹ️ INFO</span>
+            </div>
+            <div class="position-handle sponsors-handle" data-element="sponsorsOverlay">
+                <span>🏷️ SPONSORS</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Debug Info (removido em produção) -->
+    <div class="debug-info" id="debugInfo" style="display: none;">
+        <div>Status: <span id="debugStatus">Desconectado</span></div>
+        <div>Overlay: <span id="debugOverlay">OFF</span></div>
+        <div>Theme: <span id="debugTheme">light</span></div>
+        <div>Data: <span id="debugData">{}</span></div>
+    </div>
+
+    <script src="output.js"></script>
+</body>
+</html>

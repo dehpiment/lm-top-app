@@ -1,0 +1,75 @@
+{
+  "name": "lm-top-app",
+  "version": "1.0.0",
+  "description": "LiveMestre Sports Overlay System",
+  "main": "src/main/main.js",
+  "author": "LiveMestre",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:all": "electron-builder --mac --win",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps",
+    "clean": "rm -rf dist node_modules/.cache",
+    "test": "echo \"Tests não implementados ainda\" && exit 0"
+  },
+  "build": {
+    "appId": "com.livemestre.overlay",
+    "productName": "LiveMestre Overlay",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "!**/*.map",
+      "!**/node_modules/.cache"
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "arch": ["x64"],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Video"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "dmg": {
+      "title": "LiveMestre Overlay",
+      "backgroundColor": "#E31E24",
+      "window": {
+        "width": 600,
+        "height": 400
+      }
+    }
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  }
+}

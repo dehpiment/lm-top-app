@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveMestre Overlay - OBS Output</title>
+    <style>
+        /* ===============================
+           LIVEMESTRE OVERLAY - OBS OUTPUT
+           Canvas: 1920x1080 (Browser Source)
+           Versão Sincronizada Completa
+           =============================== */
+
+        :root {
+          /* Cores LiveMestre */
+          --lm-red: #E31E24;
+          --lm-white: #FFFFFF;
+          --lm-gray: #2C2C2C;
+          --lm-gray-light: #4A4A4A;
+          --lm-yellow: #FFD700;
+          
+          /* Sombras e efeitos */
+          --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+          --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          --glow-red: 0 0 20px rgba(227, 30, 36, 0.6);
+          --glow-yellow: 0 0 15px rgba(255, 215, 0, 0.8);
+        }
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
+          font-family: 'Arial Black', Arial, sans-serif;
+          background: transparent;
+          overflow: hidden;
+          user-select: none;
+        }
+
+        /* ===============================
+           CANVAS PRINCIPAL 1920x1080
+           =============================== */
+
+        .overlay-canvas {
+          width: 1920px;
+          height: 1080px;
+          position: relative;
+          background: transparent;
+          overflow: hidden;
+        }
+
+        /* ===============================
+           BACKGROUND VIDEO CONTAINER
+           =============================== */
+
+        .background-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 1;
+          pointer-events: none;
+        }
+
+        .background-video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .background-video.playing {
+          opacity: 1;
+        }
+
+        /* ===============================
+           OVERLAY CONTENT
+           =============================== */
+
+        .overlay-content {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 10;
+          pointer-events: none;
+        }
+
+        /* ===============================
+           SCORE OVERLAY
+           =============================== */
+
+        .score-overlay {
+          position: absolute;
+          bottom: 80px;
+          left: 50%;
+          transform: translateX(-50%);
+          opacity: 1;
+          transition: all 0.5s ease;
+        }
+
+        .score-overlay.hidden {
+          opacity: 0;
+          transform: translateX(-50%) translateY(20px);
+        }
+
+        .score-container {
+          display: flex;
+          align-items: center;
+          gap: 40px;
+          background: linear-gradient(135deg, rgba(44, 44, 44, 0.95), rgba(26, 26, 26, 0.95));
+          border: 3px solid var(--lm-red);
+          border-radius: 20px;
+          padding: 20px 40px;
+          box-shadow: var(--box-shadow);
+          backdrop-filter: blur(10px);
+        }
+
+        .team-section {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          min-width: 200px;
+        }
+
+        .team-name {
+          color: var(--lm-white);
+          font-size: 24px;
+          font-weight: bold;
+          text-transform: uppercase;
+          text-shadow: var(--text-shadow);
+          text-align: center;
+          max-width: 200px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .team-score {
+          color: var(--lm-red);
+          font-size: 72px;
+          font-weight: 900;
+          text-shadow: var(--text-shadow);
+          background: linear-gradient(45deg, var(--lm-red), #FF4444);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8));
+        }
+
+        .vs-section {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--lm-red);
+          border-radius: 50%;
+          width: 80px;
+          height: 80px;
+          box-shadow: var(--glow-red);
+        }
+
+        .vs-text {
+          color: var(--lm-white);
+          font-size: 28px;
+          font-weight: 900;
+          text-shadow: var(--text-shadow);
+        }
+
+        /* ===============================
+           CLOCK OVERLAY
+           =============================== */
+
+        .clock-overlay {
+          position: absolute;
+          top: 60px;
+          left: 50%;
+          transform: translateX(-50%);
+          opacity: 1;
+          transition: all 0.5s ease;
+        }
+
+        .clock-overlay.hidden {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-20px);
+        }
+
+        .clock-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          background: linear-gradient(135deg, rgba(44, 44, 44, 0.95), rgba(26, 26, 26, 0.95));
+          border: 2px solid var(--lm-red);
+          border-radius: 15px;
+          padding: 15px 30px;
+          box-shadow: var(--box-shadow);
+          backdrop-filter: blur(10px);
+        }
+
+        .clock-time {
+          color: var(--lm-yellow);
+          font-size: 48px;
+          font-weight: 900;
+          text-shadow: var(--text-shadow);
+          font-family: 'Courier New', monospace;
+          letter-spacing: 2px;
+        }
+
+        .clock-period {
+          color: var(--lm-white);
+          font-size: 18px;
+          font-weight: bold;
+          text-transform: uppercase;
+          text-shadow: var(--text-shadow);
+        }
+
+        /* ===============================
+           INFO OVERLAY
+           =============================== */
+
+        .info-overlay {
+          position: absolute;
+          top: 60px;
+          right: 60px;
+          opacity: 1;
+          transition: all 0.5s ease;
+        }
+
+        .info-overlay.hidden {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+
+        .info-container {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .live-indicator {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: linear-gradient(135deg, var(--lm-red), #C41E24);
+          border-radius: 25px;
+          padding: 12px 20px;
+          box-shadow: var(--glow-red);
+        }
+
+        .live-dot {
+          width: 12px;
+          height: 12px;
+          background: var(--lm-white);
+          border-radius: 50%;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        .live-indicator span {
+          color: var(--lm-white);
+          font-size: 16px;
+          font-weight: bold;
+          text-shadow: var(--text-shadow);
+        }
+
+        /* ===============================
+           SPONSORS OVERLAY
+           =============================== */
+
+        .sponsors-overlay {
+          position: absolute;
+          bottom: 60px;
+          right: 60px;
+          opacity: 0;
+          transition: all 0.8s ease;
+        }
+
+        .sponsors-overlay.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .sponsors-overlay.hidden {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+
+        .sponsor-container {
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 248, 248, 0.95));
+          border: 2px solid var(--lm-gray);
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: var(--box-shadow);
+          backdrop-filter: blur(10px);
+          max-width: 200px;
+          max-height: 100px;
+        }
+
+        .sponsor-logo img {
+          max-width: 160px;
+          max-height: 60px;
+          object-fit: contain;
+          filter: drop-shadow(1px 1px 3px rgba(0, 0, 0, 0.3));
+        }
+
+        /* ===============================
+           SYNC STATUS (DEBUG)
+           =============================== */
+
+        .sync-status {
+          position: fixed;
+          top: 10px;
+          left: 10px;
+          background: rgba(0, 0, 0, 0.9);
+          color: var(--lm-white);
+          padding: 15px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-family: 'Courier New', monospace;
+          z-index: 1000;
+          display: none;
+          min-width: 280px;
+          border-left: 4px solid #6c757d;
+        }
+
+        .sync-status.connected {
+          border-left-color: #28a745;
+        }
+
+        .sync-status.disconnected {
+          border-left-color: #dc3545;
+        }
+
+        .sync-status.warning {
+          border-left-color: #ffc107;
+        }
+
+        .sync-status div {
+          margin-bottom: 5px;
+        }
+
+        .sync-status div:last-child {
+          margin-bottom: 0;
+        }
+
+        /* ===============================
+           UTILITY CLASSES
+           =============================== */
+
+        .hidden { display: none !important; }
+        .visible { display: block !important; }
+        .opacity-0 { opacity: 0 !important; }
+        .opacity-100 { opacity: 1 !important; }
+
+        /* ===============================
+           ANIMATIONS
+           =============================== */
+
+        .fade-in {
+          animation: fadeIn 0.8s ease-out;
+        }
+
+        .fade-out {
+          animation: fadeOut 0.8s ease-out;
+        }
+
+        .slide-in-bottom {
+          animation: slideInBottom 0.8s ease-out;
+        }
+
+        .slide-out-bottom {
+          animation: slideOutBottom 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+
+        @keyframes slideInBottom {
+          from { opacity: 0; transform: translateY(50px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideOutBottom {
+          from { opacity: 1; transform: translateY(0); }
+          to { opacity: 0; transform: translateY(50px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas principal 1920x1080 -->
+    <div class="overlay-canvas" id="overlayCanvas">
+        
+        <!-- Background Video Container -->
+        <div class="background-container" id="backgroundContainer">
+            <video class="background-video" id="backgroundVideo" muted>
+                <source id="backgroundSource" src="" type="video/webm">
+            </video>
+        </div>
+
+        <!-- Overlay Content -->
+        <div class="overlay-content" id="overlayContent">
+            
+            <!-- Score Display -->
+            <div class="score-overlay" id="scoreOverlay">
+                <div class="score-container">
+                    <div class="team-section team-home">
+                        <div class="team-name" id="homeTeamName">AGUARDANDO</div>
+                        <div class="team-score" id="homeScore">0</div>
+                    </div>
+                    
+                    <div class="vs-section">
+                        <div class="vs-text">VS</div>
+                    </div>
+                    
+                    <div class="team-section team-away">
+                        <div class="team-name" id="awayTeamName">CONEXÃO</div>
+                        <div class="team-score" id="awayScore">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clock Display -->
+            <div class="clock-overlay" id="clockOverlay">
+                <div class="clock-container">
+                    <div class="clock-time" id="clockTime">--:--</div>
+                    <div class="clock-period" id="clockPeriod">CARREGANDO</div>
+                </div>
+            </div>
+
+            <!-- Additional Info Overlay -->
+            <div class="info-overlay" id="infoOverlay">
+                <div class="info-container">
+                    <div class="live-indicator">
+                        <div class="live-dot"></div>
+                        <span>AO VIVO</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sponsors Carousel -->
+            <div class="sponsors-overlay" id="sponsorsOverlay" style="display: none;">
+                <div class="sponsor-container">
+                    <div class="sponsor-logo" id="currentSponsor">
+                        <img id="sponsorImage" src="" alt="Patrocinador">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Sync Status (Debug) -->
+    <div class="sync-status" id="syncStatus">
+        <div><strong>LiveMestre Overlay Status</strong></div>
+        <div>Status: <span id="statusText">Inicializando...</span></div>
+        <div>Última sync: <span id="lastUpdate">--:--:--</span></div>
+        <div>Tentativas: <span id="retryCount">0</span></div>
+        <div>Arquivo: <span id="dataFilePath">HTTP /data endpoint</span></div>
+    </div>
+
+    <script>
+        // ===============================
+        // LIVEMESTRE OVERLAY - OUTPUT SINCRONIZADO
+        // Versão completa com sincronização
+        // ===============================
+
+        class DataReader {
+            constructor(callback) {
+                this.callback = callback;
+                this.dataURL = '/data'; // URL do servidor HTTP, não arquivo local
+                this.lastUpdate = 0;
+                this.pollInterval = 500; // 500ms
+                this.retryCount = 0;
+                this.maxRetries = 10;
+                this.isConnected = false;
+                this.connectionAttempts = 0;
+                
+                this.startPolling();
+            }
+
+            async startPolling() {
+                console.log('🔄 DataReader iniciado - polling via HTTP a cada', this.pollInterval, 'ms');
+                
+                // Primeira tentativa imediata
+                this.checkForUpdates();
+                
+                // Polling contínuo
+                setInterval(() => {
+                    this.checkForUpdates();
+                }, this.pollInterval);
+            }
+
+            async checkForUpdates() {
+                try {
+                    this.connectionAttempts++;
+                    
+                    // Fazer requisição HTTP para /data
+                    const cacheBust = '?t=' + Date.now() + '&attempt=' + this.connectionAttempts;
+                    const response = await fetch(this.dataURL + cacheBust);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Validar estrutura dos dados
+                    if (!this.validateData(data)) {
+                        throw new Error('Dados inválidos recebidos');
+                    }
+                    
+                    // Verificar se há atualizações
+                    if (data.lastUpdate && data.lastUpdate > this.lastUpdate) {
+                        this.lastUpdate = data.lastUpdate;
+                        this.callback(data);
+                        this.retryCount = 0;
+                        this.isConnected = true;
+                        this.updateSyncStatus('connected');
+                        
+                        console.log('✅ Dados sincronizados via HTTP:', {
+                            score: `${data.score.home}x${data.score.away}`,
+                            teams: `${data.teams.home} vs ${data.teams.away}`,
+                            clock: `${data.clock.time} - ${data.clock.period}`,
+                            visible: data.isVisible
+                        });
+                    }
+                    
+                } catch (error) {
+                    this.retryCount++;
+                    this.isConnected = false;
+                    
+                    if (this.retryCount <= 3) {
+                        this.updateSyncStatus('warning');
+                        console.warn(`⚠️ Tentativa ${this.retryCount}/3 - Conectando via HTTP...`);
+                    } else if (this.retryCount === this.maxRetries) {
+                        this.updateSyncStatus('disconnected');
+                        this.useTestData();
+                        console.log('🔴 Servidor desconectado - Modo teste ativado');
+                    }
+                }
+            }
+
+            validateData(data) {
+                return data && 
+                       data.score && 
+                       data.teams && 
+                       data.clock && 
+                       typeof data.isVisible === 'boolean';
+            }
+
+            updateSyncStatus(status) {
+                const statusEl = document.getElementById('syncStatus');
+                const statusText = document.getElementById('statusText');
+                const lastUpdateEl = document.getElementById('lastUpdate');
+                const retryCountEl = document.getElementById('retryCount');
+                
+                statusEl.className = `sync-status ${status}`;
+                
+                switch (status) {
+                    case 'connected':
+                        statusText.textContent = '🟢 Conectado à Interface';
+                        lastUpdateEl.textContent = new Date().toLocaleTimeString();
+                        break;
+                    case 'warning':
+                        statusText.textContent = '🟡 Tentando conectar...';
+                        break;
+                    case 'disconnected':
+                        statusText.textContent = '🔴 Desconectado - Modo Teste';
+                        break;
+                }
+                
+                retryCountEl.textContent = this.retryCount;
+            }
+
+            useTestData() {
+                const testData = {
+                    score: { home: 0, away: 0 },
+                    teams: { home: 'MODO', away: 'TESTE' },
+                    clock: { time: '--:--', period: 'STANDALONE' },
+                    isVisible: true,
+                    lastUpdate: Date.now()
+                };
+                
+                this.callback(testData);
+                console.log('🎮 Usando dados de teste');
+            }
+
+            forceUpdate() {
+                this.retryCount = 0;
+                this.checkForUpdates();
+                console.log('🔄 Reconexão forçada');
+            }
+        }
+
+        class OverlayOutput {
+            constructor() {
+                this.data = {
+                    score: { home: 0, away: 0 },
+                    teams: { home: 'AGUARDANDO', away: 'CONEXÃO' },
+                    clock: { time: '--:--', period: 'CARREGANDO' },
+                    isVisible: true,
+                    theme: 'light'
+                };
+                
+                this.sponsorsData = [];
+                this.currentSponsorIndex = 0;
+                this.sponsorInterval = null;
+                
+                this.init();
+            }
+
+            init() {
+                this.setupDataSync();
+                this.setupEventListeners();
+                this.updateDisplay();
+                
+                console.log('🎉 LiveMestre Overlay Output Sincronizado inicializado!');
+                this.showWelcomeMessage();
+            }
+
+            setupDataSync() {
+                this.dataReader = new DataReader((newData) => {
+                    this.data = { ...this.data, ...newData };
+                    this.updateDisplay();
+                });
+            }
+
+            setupEventListeners() {
+                // Debug shortcuts
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl+Shift+D = Toggle Debug Status
+                    if (e.ctrlKey && e.shiftKey && e.code === 'KeyD') {
+                        this.toggleSyncStatus();
+                    }
+                    
+                    // Ctrl+Shift+T = Simulate Data
+                    if (e.ctrlKey && e.shiftKey && e.code === 'KeyT') {
+                        this.simulateData();
+                    }
+                    
+                    // Ctrl+Shift+H = Toggle Overlay
+                    if (e.ctrlKey && e.shiftKey && e.code === 'KeyH') {
+                        this.toggleOverlay();
+                    }
+
+                    // Ctrl+Shift+R = Force Reconnect
+                    if (e.ctrlKey && e.shiftKey && e.code === 'KeyR') {
+                        this.forceReconnect();
+                    }
+
+                    // Ctrl+Shift+S = Start Sponsors
+                    if (e.ctrlKey && e.shiftKey && e.code === 'KeyS') {
+                        this.toggleSponsors();
+                    }
+                });
+
+                // Auto-hide status after initial display
+                setTimeout(() => {
+                    const statusEl = document.getElementById('syncStatus');
+                    if (statusEl.style.display !== 'none') {
+                        statusEl.style.display = 'none';
+                    }
+                }, 5000);
+            }
+
+            // ===============================
+            // DISPLAY UPDATES
+            // ===============================
+
+            updateDisplay() {
+                this.updateScore();
+                this.updateTeams();
+                this.updateClock();
+                this.updateVisibility();
+            }
+
+            updateScore() {
+                document.getElementById('homeScore').textContent = this.data.score.home;
+                document.getElementById('awayScore').textContent = this.data.score.away;
+            }
+
+            updateTeams() {
+                document.getElementById('homeTeamName').textContent = this.data.teams.home;
+                document.getElementById('awayTeamName').textContent = this.data.teams.away;
+            }
+
+            updateClock() {
+                document.getElementById('clockTime').textContent = this.data.clock.time;
+                document.getElementById('clockPeriod').textContent = this.data.clock.period;
+            }
+
+            updateVisibility() {
+                const overlayElements = [
+                    document.getElementById('scoreOverlay'),
+                    document.getElementById('clockOverlay'),
+                    document.getElementById('infoOverlay')
+                ];
+
+                overlayElements.forEach(element => {
+                    if (this.data.isVisible) {
+                        element.classList.remove('hidden');
+                    } else {
+                        element.classList.add('hidden');
+                    }
+                });
+            }
+
+            // ===============================
+            // DEBUG AND TEST METHODS
+            // ===============================
+
+            toggleSyncStatus() {
+                const statusEl = document.getElementById('syncStatus');
+                statusEl.style.display = statusEl.style.display === 'none' ? 'block' : 'none';
+                console.log('📊 Status de sincronização alternado');
+            }
+
+            toggleOverlay() {
+                this.data.isVisible = !this.data.isVisible;
+                this.updateVisibility();
+                console.log('👁️ Overlay:', this.data.isVisible ? 'Visível' : 'Oculto');
+            }
+
+            simulateData() {
+                const testDataSets = [
+                    {
+                        score: { home: 1, away: 0 },
+                        teams: { home: 'FLAMENGO', away: 'VASCO' },
+                        clock: { time: '15:30', period: '1º TEMPO' }
+                    },
+                    {
+                        score: { home: 2, away: 1 },
+                        teams: { home: 'PALMEIRAS', away: 'CORINTHIANS' },
+                        clock: { time: '38:42', period: '1º TEMPO' }
+                    },
+                    {
+                        score: { home: 0, away: 2 },
+                        teams: { home: 'SANTOS', away: 'SÃO PAULO' },
+                        clock: { time: '67:15', period: '2º TEMPO' }
+                    },
+                    {
+                        score: { home: 3, away: 3 },
+                        teams: { home: 'GRÊMIO', away: 'INTERNACIONAL' },
+                        clock: { time: '90:00', period: 'PRORROGAÇÃO' }
+                    }
+                ];
+                
+                const randomData = testDataSets[Math.floor(Math.random() * testDataSets.length)];
+                this.data = { ...this.data, ...randomData };
+                this.updateDisplay();
+                
+                console.log('🎮 Dados de teste aplicados:', randomData);
+            }
+
+            forceReconnect() {
+                if (this.dataReader) {
+                    this.dataReader.forceUpdate();
+                }
+            }
+
+            toggleSponsors() {
+                // TODO: Implementar sistema de patrocinadores
+                console.log('🏷️ Sistema de patrocinadores - Em desenvolvimento');
+            }
+
+            showWelcomeMessage() {
+                console.log('🎉 LiveMestre Overlay carregado com sucesso!');
+                console.log('📺 Pronto para uso no OBS Studio');
+                console.log('🔄 Sincronização ativa com a Interface de Controle');
+                console.log('');
+                console.log('🎮 Atalhos de debug disponíveis:');
+                console.log('   Ctrl+Shift+D = Status de sincronização');
+                console.log('   Ctrl+Shift+T = Dados de teste aleatórios');
+                console.log('   Ctrl+Shift+H = Toggle overlay');
+                console.log('   Ctrl+Shift+R = Forçar reconexão');
+                console.log('   Ctrl+Shift+S = Toggle patrocinadores');
+            }
+        }
+
+        // ===============================
+        // INICIALIZAÇÃO
+        // ===============================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar overlay
+            window.overlayOutput = new OverlayOutput();
+            
+            // Mostrar status inicial por 5 segundos
+            const statusEl = document.getElementById('syncStatus');
+            statusEl.style.display = 'block';
+            
+            // Feedback visual que carregou
+            console.log('✅ DOM carregado - LiveMestre Overlay iniciado');
+        });
+
+        // Global error handler
+        window.addEventListener('error', (e) => {
+            console.error('❌ Erro no overlay:', e.error);
+        });
+
+        // Expose to window for debugging
+        window.LM_DEBUG = {
+            toggleStatus: () => window.overlayOutput?.toggleSyncStatus(),
+            simulate: () => window.overlayOutput?.simulateData(),
+            reconnect: () => window.overlayOutput?.forceReconnect(),
+            getData: () => window.overlayOutput?.data
+        };
+    </script>
+</body>
+</html>

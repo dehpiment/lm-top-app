@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveMestre Overlay - Controle</title>
+    <link rel="stylesheet" href="control.css">
+</head>
+<body>
+    <div class="app" id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>LiveMestre</h1>
+                    <span>Overlay Control</span>
+                </div>
+                <div class="header-controls">
+                    <button class="theme-toggle" id="themeToggle">
+                        🌙
+                    </button>
+                    <div class="overlay-status">
+                        <span>Overlay:</span>
+                        <button class="overlay-toggle" id="overlayToggle">
+                            <span class="status-text">OFF</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Quick Controls -->
+            <section class="card">
+                <h2>Controles Rápidos</h2>
+                <div class="quick-controls">
+                    <div class="control-group">
+                        <label>Overlay</label>
+                        <button class="btn btn-primary" id="toggleOverlayBtn">Mostrar/Esconder (F5)</button>
+                    </div>
+                    <div class="control-group">
+                        <label>Reset</label>
+                        <button class="btn btn-secondary" id="resetScoreBtn">Reset Placar</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Score Control -->
+            <section class="card">
+                <h2>Placar</h2>
+                <div class="score-control">
+                    <div class="team-control">
+                        <div class="team-info">
+                            <label>Time Casa</label>
+                            <input type="text" id="homeTeam" placeholder="TIME CASA" maxlength="20">
+                        </div>
+                        <div class="score-section">
+                            <div class="score-display" id="homeScore">0</div>
+                            <div class="score-buttons">
+                                <button class="btn btn-sm btn-success" data-action="home-plus">+1 (F1)</button>
+                                <button class="btn btn-sm btn-danger" data-action="home-minus">-1 (F3)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vs-divider">
+                        <span>VS</span>
+                    </div>
+
+                    <div class="team-control">
+                        <div class="team-info">
+                            <label>Time Visitante</label>
+                            <input type="text" id="awayTeam" placeholder="TIME VISITANTE" maxlength="20">
+                        </div>
+                        <div class="score-section">
+                            <div class="score-display" id="awayScore">0</div>
+                            <div class="score-buttons">
+                                <button class="btn btn-sm btn-success" data-action="away-plus">+1 (F2)</button>
+                                <button class="btn btn-sm btn-danger" data-action="away-minus">-1 (F4)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Clock Control -->
+            <section class="card">
+                <h2>Cronômetro & Período</h2>
+                <div class="clock-control">
+                    <div class="clock-section">
+                        <label>Tempo</label>
+                        <div class="clock-input">
+                            <input type="number" id="clockMinutes" min="0" max="99" value="0" placeholder="00">
+                            <span>:</span>
+                            <input type="number" id="clockSeconds" min="0" max="59" value="0" placeholder="00">
+                        </div>
+                        <div class="clock-buttons">
+                            <button class="btn btn-primary" id="startClockBtn">▶️ Iniciar</button>
+                            <button class="btn btn-secondary" id="pauseClockBtn">⏸️ Pausar</button>
+                            <button class="btn btn-danger" id="resetClockBtn">⏹️ Reset</button>
+                        </div>
+                    </div>
+                    
+                    <div class="period-section">
+                        <label>Período</label>
+                        <select id="periodSelect">
+                            <option value="1º TEMPO">1º Tempo</option>
+                            <option value="INTERVALO">Intervalo</option>
+                            <option value="2º TEMPO">2º Tempo</option>
+                            <option value="PRORROGAÇÃO">Prorrogação</option>
+                            <option value="PÊNALTIS">Pênaltis</option>
+                            <option value="PERSONALIZADO">Personalizado</option>
+                        </select>
+                        <input type="text" id="customPeriod" placeholder="Digite o período" style="display: none;">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Background Controls -->
+            <section class="card">
+                <h2>Backgrounds Animados</h2>
+                <div class="background-control">
+                    <div class="background-section">
+                        <label>Animação de Entrada (.webm)</label>
+                        <div class="file-input-group">
+                            <input type="file" id="backgroundIn" accept=".webm" class="file-input">
+                            <button class="btn btn-secondary" id="previewInBtn">Preview IN</button>
+                        </div>
+                    </div>
+                    
+                    <div class="background-section">
+                        <label>Animação de Saída (.webm)</label>
+                        <div class="file-input-group">
+                            <input type="file" id="backgroundOut" accept=".webm" class="file-input">
+                            <button class="btn btn-secondary" id="previewOutBtn">Preview OUT</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hotkeys Reference -->
+            <section class="card">
+                <h2>Atalhos do Teclado</h2>
+                <div class="hotkeys-grid">
+                    <div class="hotkey-item">
+                        <kbd>F1</kbd>
+                        <span>+1 Time Casa</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <kbd>F2</kbd>
+                        <span>+1 Time Visitante</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <kbd>F3</kbd>
+                        <span>-1 Time Casa</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <kbd>F4</kbd>
+                        <span>-1 Time Visitante</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <kbd>F5</kbd>
+                        <span>Mostrar/Esconder Overlay</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="control.js"></script>
+</body>
+</html>
