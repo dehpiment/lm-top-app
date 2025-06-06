@@ -9,11 +9,129 @@ let outputWindow;
 let httpServer;
 const PORT = 8080;
 
+// ===============================
+// TIMER CENTRALIZADO
+// ===============================
+let timerMaster = {
+  currentSeconds: 0,
+  isRunning: false,
+  mode: 'progressive', // 'progressive' ou 'regressive'
+  maxTime: 2700, // 45 min default
+  interval: null
+};
+
+function startMasterTimer() {
+  if (timerMaster.interval) return; // Já está rodando
+  
+  timerMaster.isRunning = true;
+  timerMaster.interval = setInterval(() => {
+    if (timerMaster.mode === 'progressive') {
+      timerMaster.currentSeconds++;
+      if (timerMaster.currentSeconds >= timerMaster.maxTime) {
+        timerMaster.currentSeconds = timerMaster.maxTime;
+        pauseMasterTimer();
+        console.log('⏰ Timer: Tempo esgotado (progressivo)');
+      }
+    } else {
+      // Regressive
+      timerMaster.currentSeconds--;
+      if (timerMaster.currentSeconds <= 0) {
+        timerMaster.currentSeconds = 0;
+        pauseMasterTimer();
+        console.log('⏰ Timer: Tempo esgotado (regressivo)');
+      }
+    }
+    
+    // Atualizar overlayData e fazer broadcast
+    updateTimerInOverlayData();
+    broadcastUpdate();
+  }, 1000);
+  
+  console.log(`▶️ Timer Master iniciado (${timerMaster.mode})`);
+}
+
+function pauseMasterTimer() {
+  if (timerMaster.interval) {
+    clearInterval(timerMaster.interval);
+    timerMaster.interval = null;
+  }
+  timerMaster.isRunning = false;
+  
+  updateTimerInOverlayData();
+  broadcastUpdate();
+  console.log('⏸️ Timer Master pausado');
+}
+
+function resetMasterTimer() {
+  pauseMasterTimer();
+  
+  if (timerMaster.mode === 'progressive') {
+    timerMaster.currentSeconds = 0;
+  } else {
+    timerMaster.currentSeconds = timerMaster.maxTime;
+  }
+  
+  updateTimerInOverlayData();
+  broadcastUpdate();
+  console.log(`⏹️ Timer Master resetado (${timerMaster.mode})`);
+}
+
+function setTimerMode(mode, maxTime = null) {
+  const wasRunning = timerMaster.isRunning;
+  
+  pauseMasterTimer();
+  
+  timerMaster.mode = mode;
+  if (maxTime) timerMaster.maxTime = maxTime;
+  
+  // Reset para posição inicial
+  if (mode === 'progressive') {
+    timerMaster.currentSeconds = 0;
+  } else {
+    timerMaster.currentSeconds = timerMaster.maxTime;
+  }
+  
+  updateTimerInOverlayData();
+  broadcastUpdate();
+  
+  // Retomar se estava rodando
+  if (wasRunning) {
+    startMasterTimer();
+  }
+  
+  console.log(`⚙️ Timer Mode: ${mode}, Max: ${Math.floor(timerMaster.maxTime/60)}min`);
+}
+
+function updateTimerInOverlayData() {
+  const minutes = Math.floor(timerMaster.currentSeconds / 60);
+  const seconds = timerMaster.currentSeconds % 60;
+  const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  
+  // Atualizar estrutura clock (para compatibilidade)
+  overlayData.clock.time = timeString;
+  
+  // Atualizar estrutura timer completa
+  overlayData.timer = {
+    time: timeString,
+    isRunning: timerMaster.isRunning,
+    mode: timerMaster.mode,
+    maxTime: timerMaster.maxTime,
+    currentSeconds: timerMaster.currentSeconds
+  };
+}
+
 // Dados compartilhados entre as janelas
 let overlayData = {
   score: { home: 0, away: 0 },
   teams: { home: 'TIME A', away: 'TIME B' },
   clock: { time: '00:00', period: '1º TEMPO' },
+  timer: {
+    time: '00:00',
+    isRunning: false,
+    mode: 'progressive',
+    maxTime: 2700,
+    currentSeconds: 0
+  },
   isVisible: false,
   theme: 'light'
 };
@@ -79,7 +197,13 @@ async function handleRequest(req, res) {
   } else if (pathname === '/output') {
     await serveOutputPage(res);
   } else if (pathname === '/data') {
-    await serveDataJSON(res);
+    if (req.method === 'GET') {
+      await serveDataJSON(res);
+    } else if (req.method === 'POST') {
+      await updateDataFromDock(req, res);
+    }
+  } else if (pathname === '/dock') {
+    await serveDockPage(res);
   } 
   // Arquivos CSS/JS específicos
   else if (pathname === '/control.css') {
@@ -158,12 +282,36 @@ async function serveOutputPage(res) {
   }
 }
 
+async function serveDockPage(res) {
+  try {
+    const dockPath = path.join(__dirname, '../control/dock.html');
+    console.log(`📱 Servindo dock.html de: ${dockPath}`);
+    
+    if (!fs.existsSync(dockPath)) {
+      throw new Error(`Arquivo não encontrado: ${dockPath}`);
+    }
+    
+    const content = fs.readFileSync(dockPath, 'utf8');
+    
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(content);
+    console.log('✅ Dock page servida com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao servir dock.html:', error);
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('Erro ao carregar dock: ' + error.message);
+  }
+}
+
 // ===============================
 // SERVIR DADOS JSON
 // ===============================
 
 async function serveDataJSON(res) {
   try {
+    // Garantir que timer está atualizado
+    updateTimerInOverlayData();
+    
     const dataWithTimestamp = {
       ...overlayData,
       lastUpdate: Date.now(),
@@ -180,12 +328,61 @@ async function serveDataJSON(res) {
       score: `${overlayData.score.home}x${overlayData.score.away}`,
       teams: `${overlayData.teams.home} vs ${overlayData.teams.away}`,
       clock: overlayData.clock.time,
+      timer: `${overlayData.timer.time} (${overlayData.timer.isRunning ? 'Rodando' : 'Parado'})`,
       visible: overlayData.isVisible
     });
   } catch (error) {
     console.error('❌ Erro ao servir dados JSON:', error);
     res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end('{"error": "Erro ao carregar dados"}');
+  }
+}
+
+async function updateDataFromDock(req, res) {
+  try {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      const newData = JSON.parse(body);
+      
+      // Verificar se há comandos de timer
+      if (newData.timerCommands) {
+        const cmd = newData.timerCommands;
+        
+        if (cmd.action === 'start') {
+          startMasterTimer();
+        } else if (cmd.action === 'pause') {
+          pauseMasterTimer();
+        } else if (cmd.action === 'reset') {
+          resetMasterTimer();
+        } else if (cmd.action === 'setMode') {
+          setTimerMode(cmd.mode, cmd.maxTime);
+        } else if (cmd.action === 'setTime') {
+          // Atualizar tempo manualmente
+          timerMaster.currentSeconds = cmd.seconds || 0;
+          updateTimerInOverlayData();
+        }
+      }
+      
+      // Atualizar outros dados (exceto timer que é centralizado)
+      const { timer, timerCommands, ...otherData } = newData;
+      overlayData = { ...overlayData, ...otherData };
+      
+      // Enviar para todas as janelas conectadas
+      broadcastUpdate();
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+      
+      console.log('📡 Dados atualizados pela dock:', {
+        timer: timerCommands ? `Comando: ${timerCommands.action}` : 'Sem mudanças',
+        other: Object.keys(otherData)
+      });
+    });
+  } catch (error) {
+    console.error('❌ Erro ao atualizar dados:', error);
+    res.writeHead(500);
+    res.end('{"error": "Failed to update data"}');
   }
 }
 
@@ -335,6 +532,9 @@ function createOutputWindow() {
 app.whenReady().then(() => {
   console.log('🚀 Iniciando LiveMestre Overlay...');
   
+  // Inicializar timer master
+  updateTimerInOverlayData();
+  
   // Criar servidor HTTP primeiro
   createHTTPServer();
   
@@ -359,6 +559,9 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  // Parar timer master
+  pauseMasterTimer();
+  
   // Fechar servidor HTTP
   if (httpServer) {
     httpServer.close(() => {
@@ -374,6 +577,9 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   // Limpar hotkeys
   globalShortcut.unregisterAll();
+  
+  // Parar timer master
+  pauseMasterTimer();
   
   // Fechar servidor HTTP
   if (httpServer) {
@@ -428,6 +634,9 @@ function registerGlobalShortcuts() {
 }
 
 function broadcastUpdate() {
+  // Garantir que timer está atualizado
+  updateTimerInOverlayData();
+  
   // Enviar para janelas Electron via IPC
   if (controlWindow && !controlWindow.isDestroyed()) {
     controlWindow.webContents.send('data-update', overlayData);
@@ -473,11 +682,37 @@ ipcMain.on('get-initial-data', (event) => {
 });
 
 // ===============================
+// IPC HANDLERS PARA TIMER MASTER
+// ===============================
+
+ipcMain.on('timer-start', () => {
+  startMasterTimer();
+});
+
+ipcMain.on('timer-pause', () => {
+  pauseMasterTimer();
+});
+
+ipcMain.on('timer-reset', () => {
+  resetMasterTimer();
+});
+
+ipcMain.on('timer-set-mode', (event, mode, maxTime) => {
+  setTimerMode(mode, maxTime);
+});
+
+ipcMain.on('timer-set-time', (event, seconds) => {
+  timerMaster.currentSeconds = seconds;
+  updateTimerInOverlayData();
+  broadcastUpdate();
+});
+
+// ===============================
 // LOGS DE INICIALIZAÇÃO
 // ===============================
 
 console.log('');
-console.log('🏆 LiveMestre Overlay System');
+console.log('🏆 LiveMestre Overlay System v1.0.1');
 console.log('=====================================');
 console.log('📋 Hotkeys disponíveis:');
 console.log('   F1 - +1 Time Casa');
@@ -488,7 +723,10 @@ console.log('   F5 - Mostrar/Esconder Overlay');
 console.log('');
 console.log('🌐 URLs importantes:');
 console.log(`   Interface: http://localhost:${PORT}/control`);
+console.log(`   Dock: http://localhost:${PORT}/dock`);
 console.log(`   Output: http://localhost:${PORT}/output`);
 console.log(`   API: http://localhost:${PORT}/data`);
+console.log('');
+console.log('⏰ Timer Master: Centralizado e Sincronizado');
 console.log('=====================================');
 console.log('');

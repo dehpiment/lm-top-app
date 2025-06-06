@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveMestre Dock</title>
+    <style>
+        /* ===============================
+           LIVEMESTRE DOCK - COMPACT DASHBOARD
+           Inspirado no ScoreBoard+ - Layout quadrado/compacto
+           =============================== */
+
+        :root {
+            /* Cores LiveMestre */
+            --lm-red: #E31E24;
+            --lm-white: #FFFFFF;
+            --lm-gray: #2C2C2C;
+            --lm-gray-light: #4A4A4A;
+            --lm-yellow: #FFD700;
+            
+            /* Dock theme */
+            --dock-bg: rgba(44, 44, 44, 0.95);
+            --dock-border: var(--lm-red);
+            --text-primary: var(--lm-white);
+            --text-secondary: #B0B0B0;
+            --button-bg: var(--lm-gray-light);
+            --button-hover: var(--lm-red);
+            --score-bg: rgba(227, 30, 36, 0.1);
+            --timer-bg: rgba(255, 215, 0, 0.1);
+            --section-border: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="light"] {
+            --dock-bg: rgba(248, 249, 250, 0.95);
+            --text-primary: var(--lm-gray);
+            --text-secondary: #6A6A6A;
+            --button-bg: #E0E0E0;
+            --section-border: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: transparent;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* ===============================
+           DOCK CONTAINER - DASHBOARD STYLE
+           =============================== */
+
+        .dock {
+            width: 450px;
+            height: 280px;
+            background: var(--dock-bg);
+            border: 2px solid var(--dock-border);
+            border-radius: 12px;
+            padding: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: grid;
+            grid-template-areas: 
+                "header header header"
+                "team-home timer team-away"
+                "controls controls controls";
+            grid-template-rows: 40px 1fr 50px;
+            grid-template-columns: 1fr 120px 1fr;
+            gap: 8px;
+        }
+
+        /* ===============================
+           HEADER SECTION
+           =============================== */
+
+        .dock-header {
+            grid-area: header;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 8px;
+            background: linear-gradient(90deg, var(--lm-red), #C41E24);
+            border-radius: 8px;
+            color: white;
+        }
+
+        .dock-logo {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .overlay-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .overlay-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .overlay-toggle.active {
+            background: var(--lm-yellow);
+            color: var(--lm-gray);
+        }
+
+        /* ===============================
+           TEAM SECTIONS
+           =============================== */
+
+        .team-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--score-bg);
+            border: 1px solid var(--section-border);
+            border-radius: 8px;
+            padding: 8px;
+            gap: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .team-section:hover {
+            border-color: var(--lm-red);
+            background: rgba(227, 30, 36, 0.15);
+        }
+
+        .team-home {
+            grid-area: team-home;
+            border-left: 4px solid var(--home-color, #E31E24);
+            background: var(--home-bg-color, rgba(227, 30, 36, 0.1));
+        }
+
+        .team-away {
+            grid-area: team-away;
+            border-left: 4px solid var(--away-color, #0066CC);
+            background: var(--away-bg-color, rgba(0, 102, 204, 0.1));
+        }
+
+        .team-section:hover .team-home {
+            border-left-color: var(--home-color, #E31E24);
+            background: var(--home-bg-color, rgba(227, 30, 36, 0.15));
+        }
+
+        .team-section:hover .team-away {
+            border-left-color: var(--away-color, #0066CC);
+            background: var(--away-bg-color, rgba(0, 102, 204, 0.15));
+        }
+
+        .team-color-indicator {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .team-color-indicator:hover {
+            transform: scale(1.2);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .team-home .team-color-indicator {
+            background: var(--home-color, #E31E24);
+        }
+
+        .team-away .team-color-indicator {
+            background: var(--away-color, #0066CC);
+        }
+
+        .team-name {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-primary);
+            text-align: center;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+
+        .team-name:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .team-score {
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--lm-red);
+            text-align: center;
+            margin: 4px 0;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .team-controls {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .score-btn {
+            flex: 1;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            background: var(--button-bg);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .score-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .score-btn.plus {
+            background: #28A745;
+            color: white;
+        }
+
+        .score-btn.plus:hover {
+            background: #218838;
+        }
+
+        .score-btn.minus {
+            background: #DC3545;
+            color: white;
+        }
+
+        .score-btn.minus:hover {
+            background: #C82333;
+        }
+
+        /* ===============================
+           TIMER SECTION (CENTRO)
+           =============================== */
+
+        .timer-section {
+            grid-area: timer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--timer-bg);
+            border: 1px solid var(--section-border);
+            border-radius: 8px;
+            padding: 8px;
+            gap: 6px;
+        }
+
+        .timer-section:hover {
+            border-color: var(--lm-yellow);
+            background: rgba(255, 215, 0, 0.15);
+        }
+
+        .timer-mode-indicator {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            font-size: 8px;
+            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .timer-mode-indicator.progressive {
+            color: #28A745;
+        }
+
+        .timer-mode-indicator.regressive {
+            color: #FF6600;
+        }
+
+        .timer-display {
+            font-family: 'Courier New', monospace;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--lm-yellow);
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 2px;
+            width: 100%;
+        }
+
+        .timer-btn {
+            flex: 1;
+            height: 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            background: var(--button-bg);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .timer-btn:hover {
+            background: var(--lm-yellow);
+            color: var(--lm-gray);
+            transform: scale(1.05);
+        }
+
+        .period-display {
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--text-secondary);
+            text-align: center;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .period-display:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .period-display::after {
+            content: '▼';
+            font-size: 8px;
+            opacity: 0.7;
+        }
+
+        .period-display.open::after {
+            content: '▲';
+        }
+
+        /* ===============================
+           PERIOD DROPDOWN
+           =============================== */
+
+        .period-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dock-bg);
+            border: 2px solid var(--lm-red);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            min-width: 120px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .period-dropdown.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(2px);
+        }
+
+        .period-option {
+            padding: 8px 12px;
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid var(--section-border);
+            text-align: center;
+        }
+
+        .period-option:last-child {
+            border-bottom: none;
+        }
+
+        .period-option:hover {
+            background: var(--lm-red);
+            color: white;
+        }
+
+        .period-option.active {
+            background: rgba(227, 30, 36, 0.2);
+            color: var(--lm-red);
+        }
+
+        .period-option.custom {
+            color: var(--lm-yellow);
+            font-style: italic;
+        }
+
+        .period-option.custom:hover {
+            background: var(--lm-yellow);
+            color: var(--lm-gray);
+        }
+
+        /* Custom period input */
+        .custom-period-input {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--dock-bg);
+            border: 1px solid var(--lm-red);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            margin: 4px 0;
+        }
+
+        .custom-period-input:focus {
+            outline: none;
+            border-color: var(--lm-yellow);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        /* ===============================
+           CONTROLS SECTION (BOTTOM)
+           =============================== */
+
+        .dock-controls {
+            grid-area: controls;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+
+        .control-btn {
+            height: 36px;
+            padding: 0 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            background: var(--button-bg);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .control-btn:hover {
+            background: var(--button-hover);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .control-btn.swap {
+            background: var(--lm-yellow);
+            color: var(--lm-gray);
+        }
+
+        .control-btn.swap:hover {
+            background: #E6C200;
+        }
+
+        .control-btn.reset {
+            background: #DC3545;
+            color: white;
+        }
+
+        .control-btn.reset:hover {
+            background: #C82333;
+        }
+
+        .control-btn.theme {
+            width: 36px;
+            padding: 0;
+            justify-content: center;
+        }
+
+        /* ===============================
+           VS DIVIDER (OVERLAY ON TIMER)
+           =============================== */
+
+        .vs-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: var(--lm-red);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        /* ===============================
+        CONFIG MODAL
+        =============================== */
+
+        .config-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .config-modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .config-content {
+            background: var(--dock-bg);
+            border: 2px solid var(--lm-red);
+            border-radius: 12px;
+            padding: 24px;
+            width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .config-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--section-border);
+            padding-bottom: 12px;
+        }
+
+        .config-header h2 {
+            color: var(--lm-red);
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .config-header p {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .config-section {
+            margin-bottom: 20px;
+        }
+
+        .config-section h3 {
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .config-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--section-border);
+        }
+
+        .config-option:last-child {
+            border-bottom: none;
+        }
+
+        .config-option-label {
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .config-option-desc {
+            color: var(--text-secondary);
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .config-option-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timer-mode-select {
+            background: var(--button-bg);
+            border: 1px solid var(--section-border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .timer-mode-select:hover {
+            border-color: var(--lm-yellow);
+        }
+
+        .timer-duration-input {
+            background: var(--button-bg);
+            border: 1px solid var(--section-border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            padding: 4px 8px;
+            font-size: 11px;
+            width: 60px;
+            text-align: center;
+        }
+
+        .timer-duration-input:focus {
+            outline: none;
+            border-color: var(--lm-yellow);
+        }
+
+        .config-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            border-top: 1px solid var(--section-border);
+            padding-top: 16px;
+        }
+
+        .config-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .config-btn.cancel {
+            background: var(--button-bg);
+            color: var(--text-primary);
+        }
+
+        .config-btn.cancel:hover {
+            background: var(--lm-gray-light);
+        }
+
+        .config-btn.save {
+            background: var(--lm-red);
+            color: white;
+        }
+
+        .config-btn.save:hover {
+            background: #C41E24;
+        }
+
+        .config-btn.reset {
+            background: #DC3545;
+            color: white;
+        }
+
+        .config-btn.reset:hover {
+            background: #C82333;
+        }
+        /* ===============================
+           ANIMATIONS & EFFECTS
+           =============================== */
+
+        .dock {
+            animation: dockSlideIn 0.3s ease-out;
+        }
+
+        @keyframes dockSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .score-update {
+            animation: scoreFlash 0.4s ease;
+        }
+
+        @keyframes scoreFlash {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); color: var(--lm-yellow); }
+        }
+
+        .timer-pulse {
+            animation: timerPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* ===============================
+           HOTKEY HINTS
+           =============================== */
+
+        .hotkey-hint {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2px 6px;
+            border-radius: 3px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 100;
+        }
+
+        .team-section:hover .hotkey-hint,
+        .timer-section:hover .hotkey-hint,
+        .control-btn:hover .hotkey-hint {
+            opacity: 1;
+        }
+
+        /* ===============================
+           COLOR PICKER MODAL
+           =============================== */
+
+        .color-picker-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .color-picker-modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .color-picker-content {
+            background: var(--dock-bg);
+            border: 2px solid var(--lm-red);
+            border-radius: 12px;
+            padding: 20px;
+            width: 300px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .color-picker-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .color-picker-header h3 {
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .color-picker-header .team-preview {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .color-presets {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .color-preset {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .color-preset:hover {
+            border-color: var(--lm-white);
+            transform: scale(1.1);
+        }
+
+        .color-preset.selected {
+            border-color: var(--lm-yellow);
+            transform: scale(1.1);
+        }
+
+        .custom-color-section {
+            border-top: 1px solid var(--section-border);
+            padding-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .custom-color-label {
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .custom-color-input {
+            width: 100%;
+            height: 40px;
+            border: 2px solid var(--section-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .custom-color-input:hover {
+            border-color: var(--lm-red);
+        }
+
+        .color-picker-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .color-picker-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .color-picker-btn.cancel {
+            background: var(--button-bg);
+            color: var(--text-primary);
+        }
+
+        .color-picker-btn.cancel:hover {
+            background: var(--lm-gray-light);
+        }
+
+        .color-picker-btn.confirm {
+            background: var(--lm-red);
+            color: white;
+        }
+
+        .color-picker-btn.confirm:hover {
+            background: #C41E24;
+        }
+
+        @media (max-width: 500px) {
+            .dock {
+                width: 350px;
+                height: 250px;
+                grid-template-columns: 1fr 100px 1fr;
+            }
+            
+            .team-score {
+                font-size: 28px;
+            }
+            
+            .timer-display {
+                font-size: 22px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .dock {
+                width: 300px;
+                height: 220px;
+                padding: 8px;
+                gap: 6px;
+            }
+            
+            .team-score {
+                font-size: 24px;
+            }
+            
+            .timer-display {
+                font-size: 18px;
+            }
+            
+            .dock-logo span:last-child {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dock" id="dock">
+        
+        <!-- Header -->
+        <div class="dock-header">
+            <div class="dock-logo">
+                <span>🏆</span>
+                <span>LiveMestre</span>
+            </div>
+            <button class="overlay-toggle" id="overlayToggle">
+                <span>👁️</span>
+                <span class="toggle-text">OFF</span>
+            </button>
+        </div>
+
+        <!-- Team Home -->
+        <div class="team-section team-home">
+            <div class="team-color-indicator" id="homeColorIndicator" title="Change team color"></div>
+            <div class="team-name" id="homeTeamName" title="Double-click to edit">HOME</div>
+            <div class="team-score" id="homeScore">0</div>
+            <div class="team-controls">
+                <button class="score-btn plus" data-action="home-plus">+</button>
+                <button class="score-btn minus" data-action="home-minus">-</button>
+            </div>
+            <div class="hotkey-hint">F1: +1 | F3: -1</div>
+        </div>
+
+        <!-- Timer Section -->
+        <div class="timer-section">
+            <div class="timer-mode-indicator" id="timerModeIndicator">↑</div>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="timer-controls">
+                <button class="timer-btn" id="timerPlay">▶</button>
+                <button class="timer-btn" id="timerPause">⏸</button>
+                <button class="timer-btn" id="timerReset">⏹</button>
+            </div>
+            <div class="period-display" id="periodDisplay" title="Click to change">
+                1º TEMPO
+                <div class="period-dropdown" id="periodDropdown">
+                    <div class="period-option active" data-period="1º TEMPO">1º TEMPO</div>
+                    <div class="period-option" data-period="2º TEMPO">2º TEMPO</div>
+                    <div class="period-option" data-period="INTERVALO">INTERVALO</div>
+                    <div class="period-option" data-period="PRORROGAÇÃO">PRORROGAÇÃO</div>
+                    <div class="period-option" data-period="PÊNALTIS">PÊNALTIS</div>
+                    <div class="period-option custom" data-period="CUSTOM">PERSONALIZADO...</div>
+                </div>
+            </div>
+            <div class="hotkey-hint">Space: Play/Pause</div>
+        </div>
+
+        <!-- Team Away -->
+        <div class="team-section team-away">
+            <div class="team-color-indicator" id="awayColorIndicator" title="Change team color"></div>
+            <div class="team-name" id="awayTeamName" title="Double-click to edit">AWAY</div>
+            <div class="team-score" id="awayScore">0</div>
+            <div class="team-controls">
+                <button class="score-btn plus" data-action="away-plus">+</button>
+                <button class="score-btn minus" data-action="away-minus">-</button>
+            </div>
+            <div class="hotkey-hint">F2: +1 | F4: -1</div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="dock-controls">
+            <button class="control-btn swap" id="swapBtn" title="Swap teams (F8)">
+                ⚔️ Trocar
+                <div class="hotkey-hint">F8</div>
+            </button>
+            
+            <button class="control-btn reset" id="resetBtn" title="Reset score">
+                🔄 Reset
+            </button>
+            
+            <button class="control-btn" id="configBtn" title="Settings">
+                ⚙️ Config
+            </button>
+            
+            <button class="control-btn theme" id="themeBtn" title="Toggle theme">
+                🌙
+            </button>
+        </div>
+
+        <!-- VS Overlay -->
+        <div class="vs-overlay">VS</div>
+
+    </div>
+
+    <!-- Color Picker Modal -->
+    <div class="color-picker-modal" id="colorPickerModal">
+        <div class="color-picker-content">
+            <div class="color-picker-header">
+                <h3 id="colorPickerTitle">Escolher Cor do Time</h3>
+                <div class="team-preview" id="colorPickerTeam">HOME</div>
+            </div>
+            
+            <div class="color-presets" id="colorPresets">
+                <!-- Cores pré-definidas -->
+                <div class="color-preset" style="background: #E31E24" data-color="#E31E24" title="Vermelho LiveMestre"></div>
+                <div class="color-preset" style="background: #0066CC" data-color="#0066CC" title="Azul Padrão"></div>
+                <div class="color-preset" style="background: #28A745" data-color="#28A745" title="Verde"></div>
+                <div class="color-preset" style="background: #FFD700" data-color="#FFD700" title="Amarelo"></div>
+                <div class="color-preset" style="background: #FF6600" data-color="#FF6600" title="Laranja"></div>
+                <div class="color-preset" style="background: #8A2BE2" data-color="#8A2BE2" title="Roxo"></div>
+                
+                <div class="color-preset" style="background: #DC143C" data-color="#DC143C" title="Vermelho Escuro"></div>
+                <div class="color-preset" style="background: #1E90FF" data-color="#1E90FF" title="Azul Céu"></div>
+                <div class="color-preset" style="background: #32CD32" data-color="#32CD32" title="Verde Lima"></div>
+                <div class="color-preset" style="background: #FFA500" data-color="#FFA500" title="Laranja Claro"></div>
+                <div class="color-preset" style="background: #FF1493" data-color="#FF1493" title="Rosa"></div>
+                <div class="color-preset" style="background: #2C2C2C" data-color="#2C2C2C" title="Cinza Escuro"></div>
+            </div>
+            
+            <div class="custom-color-section">
+                <div class="custom-color-label">Cor Personalizada:</div>
+                <input type="color" class="custom-color-input" id="customColorInput" value="#E31E24">
+            </div>
+            
+            <div class="color-picker-actions">
+                <button class="color-picker-btn cancel" id="colorPickerCancel">Cancelar</button>
+                <button class="color-picker-btn confirm" id="colorPickerConfirm">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Config Modal -->
+    <div class="config-modal" id="configModal">
+        <div class="config-content">
+            <div class="config-header">
+                <h2>⚙️ Configurações</h2>
+                <p>Personalize o comportamento do LiveMestre</p>
+            </div>
+            
+            <div class="config-section">
+                <h3>⏱️ Cronômetro</h3>
+                
+                <div class="config-option">
+                    <div>
+                        <div class="config-option-label">Modo do Timer</div>
+                        <div class="config-option-desc">Progressivo (0→45min) ou Regressivo (20→0min)</div>
+                    </div>
+                    <div class="config-option-control">
+                        <select class="timer-mode-select" id="timerModeSelect">
+                            <option value="progressive">↑ Progressivo</option>
+                            <option value="regressive">↓ Regressivo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="config-option">
+                    <div>
+                        <div class="config-option-label">Duração (minutos)</div>
+                        <div class="config-option-desc">Tempo máximo do cronômetro</div>
+                    </div>
+                    <div class="config-option-control">
+                        <input type="number" 
+                               class="timer-duration-input" 
+                               id="timerDurationInput" 
+                               value="45" 
+                               min="1" 
+                               max="99">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>🏀 Módulos Esportivos</h3>
+                
+                <div class="config-option">
+                    <div>
+                        <div class="config-option-label">Basquete</div>
+                        <div class="config-option-desc">Botões +1, +2, +3 pontos</div>
+                    </div>
+                    <div class="config-option-control">
+                        <input type="checkbox" id="moduleBasketball" disabled>
+                        <span style="color: var(--text-secondary); font-size: 10px;">Em breve</span>
+                    </div>
+                </div>
+                
+                <div class="config-option">
+                    <div>
+                        <div class="config-option-label">Vôlei</div>
+                        <div class="config-option-desc">Contador de sets e timeouts</div>
+                    </div>
+                    <div class="config-option-control">
+                        <input type="checkbox" id="moduleVolley" disabled>
+                        <span style="color: var(--text-secondary); font-size: 10px;">Em breve</span>
+                    </div>
+                </div>
+                
+                <div class="config-option">
+                    <div>
+                        <div class="config-option-label">Faltas</div>
+                        <div class="config-option-desc">Contador de faltas por time</div>
+                    </div>
+                    <div class="config-option-control">
+                        <input type="checkbox" id="moduleFouls" disabled>
+                        <span style="color: var(--text-secondary); font-size: 10px;">Em breve</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-actions">
+                <button class="config-btn reset" id="configReset">🔄 Reset</button>
+                <button class="config-btn cancel" id="configCancel">Cancelar</button>
+                <button class="config-btn save" id="configSave">💾 Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===============================
+        // LIVEMESTRE DOCK - COMPACT DASHBOARD
+        // ===============================
+
+        class LiveMestreDock {
+            constructor() {
+                this.data = {
+                    score: { home: 0, away: 0 },
+                    teams: { home: 'HOME', away: 'AWAY' },
+                    colors: { home: '#E31E24', away: '#0066CC' }, // Vermelho e Azul default
+                    timer: { 
+                        time: '00:00', 
+                        isRunning: false,
+                        mode: 'progressive', // 'progressive' or 'regressive'
+                        startTime: 0, // em segundos
+                        maxTime: 2700 // 45min default (futsal/futebol)
+                    },
+                    period: '1º TEMPO',
+                    isVisible: false,
+                    theme: 'dark'
+                };
+                
+                this.timerSeconds = 0;
+                this.periodOptions = [
+                    '1º TEMPO', '2º TEMPO', 'INTERVALO', 
+                    'PRORROGAÇÃO', 'PÊNALTIS'
+                ];
+                this.customPeriods = []; // Períodos personalizados salvos
+                this.currentColorPickerTeam = null; // Para controlar qual time está sendo editado
+                
+                this.init();
+
+                this.isUpdatingFromExternal = false;
+
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.setupHotkeys();
+                this.loadTheme();
+                this.loadCustomPeriods();
+                this.loadTeamColors();
+                this.loadTimerConfig();
+                this.updateDisplay();
+                this.startDataPolling();
+                
+                console.log('🏆 LiveMestre Dock inicializado!');
+                console.log('📐 Tamanho: 450x280px - Ideal para dock OBS');
+            }
+
+            setupEventListeners() {
+                // Overlay toggle
+                document.getElementById('overlayToggle').addEventListener('click', () => {
+                    this.toggleOverlay();
+                });
+
+                // Score controls
+                document.querySelectorAll('[data-action]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.handleScoreAction(e.target.dataset.action);
+                    });
+                });
+
+                // Timer controls
+                document.getElementById('timerPlay').addEventListener('click', () => {
+                    this.startTimer();
+                });
+                
+                document.getElementById('timerPause').addEventListener('click', () => {
+                    this.pauseTimer();
+                });
+                
+                document.getElementById('timerReset').addEventListener('click', () => {
+                    this.resetTimer();
+                });
+
+                // Period toggle
+                document.getElementById('periodDisplay').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.togglePeriodDropdown();
+                });
+
+                // Period dropdown options
+                document.querySelectorAll('.period-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.selectPeriod(e.target.dataset.period, e.target.textContent);
+                    });
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', () => {
+                    this.closePeriodDropdown();
+                });
+
+                // Color indicators
+                document.getElementById('homeColorIndicator').addEventListener('click', () => {
+                    this.openColorPicker('home');
+                });
+                
+                document.getElementById('awayColorIndicator').addEventListener('click', () => {
+                    this.openColorPicker('away');
+                });
+
+                // Color picker events
+                document.getElementById('colorPickerCancel').addEventListener('click', () => {
+                    this.closeColorPicker();
+                });
+                
+                document.getElementById('colorPickerConfirm').addEventListener('click', () => {
+                    this.applySelectedColor();
+                });
+                
+                document.getElementById('colorPickerModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'colorPickerModal') {
+                        this.closeColorPicker();
+                    }
+                });
+
+                // Color presets
+                document.querySelectorAll('.color-preset').forEach(preset => {
+                    preset.addEventListener('click', () => {
+                        this.selectColorPreset(preset.dataset.color);
+                    });
+                });
+
+                // Custom color input
+                document.getElementById('customColorInput').addEventListener('input', (e) => {
+                    this.selectColorPreset(e.target.value);
+                });
+
+                // Config modal events
+                document.getElementById('configBtn').addEventListener('click', () => {
+                    this.openConfigModal();
+                });
+                
+                document.getElementById('configCancel').addEventListener('click', () => {
+                    this.closeConfigModal();
+                });
+                
+                document.getElementById('configSave').addEventListener('click', () => {
+                    this.saveConfig();
+                });
+                
+                document.getElementById('configReset').addEventListener('click', () => {
+                    this.resetConfig();
+                });
+                
+                document.getElementById('configModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'configModal') {
+                        this.closeConfigModal();
+                    }
+                });
+
+                // Timer mode change
+                document.getElementById('timerModeSelect').addEventListener('change', (e) => {
+                    this.updateTimerModePreview(e.target.value);
+                });
+                
+                document.getElementById('timerDurationInput').addEventListener('input', (e) => {
+                    this.updateTimerDurationPreview(e.target.value);
+                });
+
+                // Control buttons
+                document.getElementById('swapBtn').addEventListener('click', () => {
+                    this.swapTeams();
+                });
+                
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetScore();
+                });
+                
+                document.getElementById('configBtn').addEventListener('click', () => {
+                    this.openConfig();
+                });
+                
+                document.getElementById('themeBtn').addEventListener('click', () => {
+                    this.toggleTheme();
+                });
+
+                // Team name editing
+                document.getElementById('homeTeamName').addEventListener('dblclick', () => {
+                    this.editTeamName('home');
+                });
+                
+                document.getElementById('awayTeamName').addEventListener('dblclick', () => {
+                    this.editTeamName('away');
+                });
+            }
+
+            setupHotkeys() {
+                document.addEventListener('keydown', (e) => {
+                    switch(e.code) {
+                        case 'F1':
+                            e.preventDefault();
+                            this.handleScoreAction('home-plus');
+                            break;
+                        case 'F2':
+                            e.preventDefault();
+                            this.handleScoreAction('away-plus');
+                            break;
+                        case 'F3':
+                            e.preventDefault();
+                            this.handleScoreAction('home-minus');
+                            break;
+                        case 'F4':
+                            e.preventDefault();
+                            this.handleScoreAction('away-minus');
+                            break;
+                        case 'F5':
+                            e.preventDefault();
+                            this.toggleOverlay();
+                            break;
+                        case 'F8':
+                            e.preventDefault();
+                            this.swapTeams();
+                            break;
+                        case 'Space':
+                            e.preventDefault();
+                            this.data.timer.isRunning ? this.pauseTimer() : this.startTimer();
+                            break;
+                    }
+                });
+            }
+
+            // ===============================
+            // SCORE MANAGEMENT
+            // ===============================
+
+            handleScoreAction(action) {
+                const scoreElement = action.includes('home') ? 
+                    document.getElementById('homeScore') : 
+                    document.getElementById('awayScore');
+
+                switch (action) {
+                    case 'home-plus':
+                        this.data.score.home++;
+                        break;
+                    case 'home-minus':
+                        if (this.data.score.home > 0) this.data.score.home--;
+                        break;
+                    case 'away-plus':
+                        this.data.score.away++;
+                        break;
+                    case 'away-minus':
+                        if (this.data.score.away > 0) this.data.score.away--;
+                        break;
+                }
+
+                // Visual feedback
+                scoreElement.classList.add('score-update');
+                setTimeout(() => {
+                    scoreElement.classList.remove('score-update');
+                }, 400);
+
+                this.updateDisplay();
+                this.syncWithMain();
+            }
+
+            resetScore() {
+                this.data.score = { home: 0, away: 0 };
+                this.updateDisplay();
+                this.syncWithMain();
+                this.showNotification('Placar resetado!');
+            }
+
+            swapTeams() {
+                // Swap all team data
+                const tempScore = this.data.score.home;
+                const tempName = this.data.teams.home;
+                
+                this.data.score.home = this.data.score.away;
+                this.data.score.away = tempScore;
+                
+                this.data.teams.home = this.data.teams.away;
+                this.data.teams.away = tempName;
+
+                this.updateDisplay();
+                this.syncWithMain();
+                
+                this.showNotification('Times trocados!');
+            }
+
+            // ===============================
+            // TIMER MANAGEMENT
+            // ===============================
+
+            startTimer() {
+                this.sendTimerCommand('start');
+                
+                // Feedback visual imediato (opcional)
+                this.showNotification('Timer iniciado!');
+            }
+
+            pauseTimer() {
+                this.sendTimerCommand('pause');
+            }
+
+            resetTimer() {
+                this.sendTimerCommand('reset');
+            }
+
+            updateTimerDisplay() {
+                const minutes = Math.floor(this.timerSeconds / 60);
+                const seconds = this.timerSeconds % 60;
+                const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                this.data.timer.time = timeString;
+                document.getElementById('timerDisplay').textContent = timeString;
+                
+                // Update mode indicator
+                this.updateTimerModeIndicator();
+            }
+
+            updateTimerModeIndicator() {
+                const indicator = document.getElementById('timerModeIndicator');
+                if (this.data.timer.mode === 'progressive') {
+                    indicator.textContent = '↑';
+                    indicator.className = 'timer-mode-indicator progressive';
+                    indicator.title = 'Progressivo';
+                } else {
+                    indicator.textContent = '↓';
+                    indicator.className = 'timer-mode-indicator regressive';
+                    indicator.title = 'Regressivo';
+                }
+            }
+
+            updateTimerButtons() {
+                const playBtn = document.getElementById('timerPlay');
+                const pauseBtn = document.getElementById('timerPause');
+                
+                if (this.data.timer.isRunning) {
+                    playBtn.style.opacity = '0.5';
+                    pauseBtn.style.opacity = '1';
+                } else {
+                    playBtn.style.opacity = '1';
+                    pauseBtn.style.opacity = '0.5';
+                }
+            }
+
+            sendTimerCommand(action, params = {}) {
+                const timerCommand = {
+                    timerCommands: {
+                        action: action,
+                        ...params
+                    }
+                };
+
+                // Enviar comando via HTTP
+                this.syncWithMain(timerCommand);
+                
+                console.log(`⏰ Timer Command: ${action}`, params);
+            }
+
+            setTimerMode(mode, maxTime = null) {
+                this.sendTimerCommand('setMode', { 
+                    mode: mode, 
+                    maxTime: maxTime || this.data.timer.maxTime 
+                });
+            }
+
+            // ===============================
+            // PERIOD MANAGEMENT
+            // ===============================
+
+            togglePeriodDropdown() {
+                const dropdown = document.getElementById('periodDropdown');
+                const display = document.getElementById('periodDisplay');
+                
+                if (dropdown.classList.contains('open')) {
+                    this.closePeriodDropdown();
+                } else {
+                    this.openPeriodDropdown();
+                }
+            }
+
+            openPeriodDropdown() {
+                const dropdown = document.getElementById('periodDropdown');
+                const display = document.getElementById('periodDisplay');
+                
+                dropdown.classList.add('open');
+                display.classList.add('open');
+                
+                // Update active option
+                this.updateActivePeriodOption();
+            }
+
+            closePeriodDropdown() {
+                const dropdown = document.getElementById('periodDropdown');
+                const display = document.getElementById('periodDisplay');
+                
+                dropdown.classList.remove('open');
+                display.classList.remove('open');
+            }
+
+            selectPeriod(periodValue, periodText) {
+                if (periodValue === 'CUSTOM') {
+                    this.openCustomPeriodInput();
+                } else {
+                    this.setPeriod(periodText);
+                    this.closePeriodDropdown();
+                }
+            }
+
+            setPeriod(period) {
+                this.data.period = period;
+                document.getElementById('periodDisplay').firstChild.textContent = period;
+                this.updateActivePeriodOption();
+                this.syncWithMain();
+            }
+
+            updateActivePeriodOption() {
+                document.querySelectorAll('.period-option').forEach(option => {
+                    option.classList.remove('active');
+                    if (option.dataset.period === this.data.period || 
+                        option.textContent === this.data.period) {
+                        option.classList.add('active');
+                    }
+                });
+            }
+
+            openCustomPeriodInput() {
+                const dropdown = document.getElementById('periodDropdown');
+                
+                // Create custom input
+                const inputContainer = document.createElement('div');
+                inputContainer.style.padding = '4px';
+                inputContainer.innerHTML = `
+                    <input type="text" 
+                           class="custom-period-input" 
+                           placeholder="Digite o período..." 
+                           maxlength="20">
+                `;
+                
+                // Replace custom option temporarily
+                const customOption = dropdown.querySelector('.period-option.custom');
+                const originalHTML = customOption.outerHTML;
+                customOption.replaceWith(inputContainer);
+                
+                const input = inputContainer.querySelector('input');
+                input.focus();
+                
+                const finishInput = () => {
+                    const value = input.value.trim();
+                    if (value) {
+                        this.setPeriod(value.toUpperCase());
+                        
+                        // Add to custom periods if not exists
+                        if (!this.customPeriods.includes(value.toUpperCase()) && 
+                            !this.periodOptions.includes(value.toUpperCase())) {
+                            this.customPeriods.push(value.toUpperCase());
+                            this.saveCustomPeriods();
+                        }
+                    }
+                    
+                    // Restore original option
+                    inputContainer.outerHTML = originalHTML;
+                    this.setupPeriodOptionListeners();
+                    this.closePeriodDropdown();
+                };
+                
+                input.addEventListener('keydown', (e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') {
+                        finishInput();
+                    } else if (e.key === 'Escape') {
+                        inputContainer.outerHTML = originalHTML;
+                        this.setupPeriodOptionListeners();
+                        this.closePeriodDropdown();
+                    }
+                });
+                
+                input.addEventListener('blur', finishInput);
+            }
+
+            setupPeriodOptionListeners() {
+                document.querySelectorAll('.period-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.selectPeriod(e.target.dataset.period, e.target.textContent);
+                    });
+                });
+            }
+
+            saveCustomPeriods() {
+                localStorage.setItem('lm-custom-periods', JSON.stringify(this.customPeriods));
+            }
+
+            loadCustomPeriods() {
+                const saved = localStorage.getItem('lm-custom-periods');
+                if (saved) {
+                    this.customPeriods = JSON.parse(saved);
+                    // TODO: Add custom periods to dropdown
+                }
+            }
+
+            cyclePeriod() {
+                // Legacy method - now using dropdown
+                const currentIndex = this.periodOptions.indexOf(this.data.period);
+                const nextIndex = (currentIndex + 1) % this.periodOptions.length;
+                this.setPeriod(this.periodOptions[nextIndex]);
+            }
+
+            // ===============================
+            // OVERLAY MANAGEMENT
+            // ===============================
+
+            toggleOverlay() {
+                this.data.isVisible = !this.data.isVisible;
+                this.updateOverlayButton();
+                this.syncWithMain();
+            }
+
+            updateOverlayButton() {
+                const toggle = document.getElementById('overlayToggle');
+                const text = toggle.querySelector('.toggle-text');
+                
+                if (this.data.isVisible) {
+                    toggle.classList.add('active');
+                    text.textContent = 'ON';
+                } else {
+                    toggle.classList.remove('active');
+                    text.textContent = 'OFF';
+                }
+            }
+
+            // ===============================
+            // THEME MANAGEMENT
+            // ===============================
+
+            toggleTheme() {
+                this.data.theme = this.data.theme === 'dark' ? 'light' : 'dark';
+                this.loadTheme();
+            }
+
+            loadTheme() {
+                document.documentElement.setAttribute('data-theme', this.data.theme);
+                document.getElementById('themeBtn').textContent = this.data.theme === 'dark' ? '🌙' : '☀️';
+                localStorage.setItem('lm-dock-theme', this.data.theme);
+            }
+
+            // ===============================
+            // TEAM NAME EDITING
+            // ===============================
+
+            editTeamName(team) {
+                const element = document.getElementById(team === 'home' ? 'homeTeamName' : 'awayTeamName');
+                const currentName = this.data.teams[team];
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentName;
+                input.style.cssText = `
+                    background: var(--dock-bg);
+                    border: 1px solid var(--lm-red);
+                    color: var(--text-primary);
+                    font-size: 12px;
+                    font-weight: bold;
+                    width: 100%;
+                    padding: 2px 4px;
+                    border-radius: 4px;
+                    text-align: center;
+                `;
+                
+                element.replaceWith(input);
+                input.focus();
+                input.select();
+                
+                const finish = () => {
+                    const newName = input.value.trim() || currentName;
+                    this.data.teams[team] = newName.substring(0, 12); // Limit length
+                    
+                    input.replaceWith(element);
+                    this.updateDisplay();
+                    this.syncWithMain();
+                };
+                
+                input.addEventListener('blur', finish);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') finish();
+                    if (e.key === 'Escape') {
+                        input.replaceWith(element);
+                    }
+                });
+            }
+
+            // ===============================
+            // COLOR MANAGEMENT
+            // ===============================
+
+            openColorPicker(team) {
+                this.currentColorPickerTeam = team;
+                const modal = document.getElementById('colorPickerModal');
+                const title = document.getElementById('colorPickerTitle');
+                const teamPreview = document.getElementById('colorPickerTeam');
+                const customInput = document.getElementById('customColorInput');
+                
+                title.textContent = `Escolher Cor - ${team === 'home' ? 'TIME CASA' : 'TIME VISITANTE'}`;
+                teamPreview.textContent = this.data.teams[team];
+                customInput.value = this.data.colors[team];
+                
+                // Update preset selection
+                this.selectColorPreset(this.data.colors[team]);
+                
+                modal.classList.add('open');
+            }
+
+            closeColorPicker() {
+                const modal = document.getElementById('colorPickerModal');
+                modal.classList.remove('open');
+                this.currentColorPickerTeam = null;
+            }
+
+            selectColorPreset(color) {
+                // Update custom input
+                document.getElementById('customColorInput').value = color;
+                
+                // Update preset selection
+                document.querySelectorAll('.color-preset').forEach(preset => {
+                    preset.classList.remove('selected');
+                    if (preset.dataset.color === color) {
+                        preset.classList.add('selected');
+                    }
+                });
+            }
+
+            applySelectedColor() {
+                if (!this.currentColorPickerTeam) return;
+                
+                const color = document.getElementById('customColorInput').value;
+                this.data.colors[this.currentColorPickerTeam] = color;
+                
+                this.updateTeamColors();
+                this.saveTeamColors();
+                this.syncWithMain();
+                this.closeColorPicker();
+                
+                this.showNotification(`Cor do ${this.currentColorPickerTeam === 'home' ? 'Time Casa' : 'Time Visitante'} alterada!`);
+            }
+
+            updateTeamColors() {
+                // Update CSS custom properties
+                document.documentElement.style.setProperty('--home-color', this.data.colors.home);
+                document.documentElement.style.setProperty('--away-color', this.data.colors.away);
+                
+                // Convert hex to rgba for backgrounds
+                const homeRgba = this.hexToRgba(this.data.colors.home, 0.1);
+                const awayRgba = this.hexToRgba(this.data.colors.away, 0.1);
+                
+                document.documentElement.style.setProperty('--home-bg-color', homeRgba);
+                document.documentElement.style.setProperty('--away-bg-color', awayRgba);
+            }
+
+            hexToRgba(hex, alpha = 1) {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+
+            saveTeamColors() {
+                localStorage.setItem('lm-team-colors', JSON.stringify(this.data.colors));
+            }
+
+            loadTeamColors() {
+                const saved = localStorage.getItem('lm-team-colors');
+                if (saved) {
+                    this.data.colors = { ...this.data.colors, ...JSON.parse(saved) };
+                }
+                this.updateTeamColors();
+            }
+
+            loadTimerConfig() {
+                const saved = localStorage.getItem('lm-timer-config');
+                if (saved) {
+                    const config = JSON.parse(saved);
+                    this.data.timer.mode = config.mode || 'progressive';
+                    this.data.timer.maxTime = config.maxTime || 2700;
+                }
+                
+                // Inicializar timerSeconds corretamente
+                if (this.data.timer.mode === 'regressive') {
+                    this.timerSeconds = this.data.timer.maxTime;
+                } else {
+                    this.timerSeconds = 0;
+                }
+                
+                this.updateTimerDisplay();
+            }
+
+            // ===============================
+            // EXTERNAL DATA SYNC
+            // ===============================
+
+            startDataPolling() {
+                // Fazer polling a cada 500ms para receber dados externos
+                setInterval(async () => {
+                    await this.fetchExternalData();
+                }, 500);
+                
+                console.log('📡 Polling iniciado - recebendo dados externos');
+            }
+
+            async fetchExternalData() {
+                try {
+                    const response = await fetch('/data');
+                    if (response.ok) {
+                        const externalData = await response.json();
+                        
+                        // Verificar se dados mudaram (evitar loop infinito)
+                        if (this.hasDataChanged(externalData)) {
+                            // Atualizar dados locais SEM fazer sync de volta
+                            this.updateFromExternalData(externalData);
+                        }
+                    }
+                } catch (error) {
+                    // Silenciar erros de polling para não poluir console
+                    // console.error('Polling error:', error);
+                }
+            }
+
+            hasDataChanged(externalData) {
+                // Comparar dados importantes para ver se mudaram
+                return (
+                    externalData.score?.home !== this.data.score.home ||
+                    externalData.score?.away !== this.data.score.away ||
+                    externalData.teams?.home !== this.data.teams.home ||
+                    externalData.teams?.away !== this.data.teams.away ||
+                    externalData.clock?.period !== this.data.period ||
+                    externalData.isVisible !== this.data.isVisible ||
+                    externalData.timer?.time !== this.data.timer.time ||
+                    externalData.timer?.isRunning !== this.data.timer.isRunning ||
+                    externalData.timer?.mode !== this.data.timer.mode ||
+                    externalData.timer?.currentSeconds !== this.data.timer.currentSeconds
+                );
+            }
+
+            updateFromExternalData(externalData) {
+                // Flag para evitar loop infinito durante update
+                this.isUpdatingFromExternal = true;
+                this.lastExternalUpdate = externalData.lastUpdate || Date.now();
+                
+                // Atualizar dados básicos (sem fazer sync de volta)
+                this.data.score = { ...this.data.score, ...externalData.score };
+                this.data.teams = { ...this.data.teams, ...externalData.teams };
+                this.data.period = externalData.clock?.period || this.data.period;
+                this.data.isVisible = externalData.isVisible ?? this.data.isVisible;
+                
+                // ⏰ TIMER CENTRALIZADO - receber do main.js
+                if (externalData.timer) {
+                    this.data.timer = { ...this.data.timer, ...externalData.timer };
+                    
+                    console.log('📥 Timer sincronizado:', {
+                        time: this.data.timer.time,
+                        running: this.data.timer.isRunning,
+                        mode: this.data.timer.mode,
+                        seconds: this.data.timer.currentSeconds
+                    });
+                }
+                
+                // Atualizar interface
+                this.updateDisplay();
+                
+                // Limpar flag
+                this.isUpdatingFromExternal = false;
+                
+                console.log('📥 Dados recebidos de fonte externa - Timer incluído');
+            }
+
+            resetTeamColors() {
+                this.data.colors = { home: '#E31E24', away: '#0066CC' };
+                this.updateTeamColors();
+                this.saveTeamColors();
+                this.syncWithMain();
+            }
+
+            openConfigModal() {
+                const modal = document.getElementById('configModal');
+                
+                // Load current values
+                document.getElementById('timerModeSelect').value = this.data.timer.mode;
+                document.getElementById('timerDurationInput').value = Math.floor(this.data.timer.maxTime / 60);
+                
+                modal.classList.add('open');
+            }
+
+            closeConfigModal() {
+                const modal = document.getElementById('configModal');
+                modal.classList.remove('open');
+            }
+
+            saveConfig() {
+                // Save timer config
+                const newMode = document.getElementById('timerModeSelect').value;
+                const newDuration = parseInt(document.getElementById('timerDurationInput').value) || 45;
+                
+                this.data.timer.mode = newMode;
+                this.data.timer.maxTime = newDuration * 60; // Convert to seconds
+                
+                // Reset timer to new settings
+                this.resetTimer();
+                
+                // Save to localStorage
+                this.saveTimerConfig();
+                
+                // Update display
+                this.updateTimerModeIndicator();
+                
+                this.closeConfigModal();
+                this.showNotification('Configurações salvas!');
+                this.syncWithMain();
+            }
+
+            resetConfig() {
+                if (confirm('Resetar todas as configurações para o padrão?')) {
+                    // Reset timer
+                    this.data.timer.mode = 'progressive';
+                    this.data.timer.maxTime = 2700; // 45 minutes
+                    
+                    // Reset colors
+                    this.resetTeamColors();
+                    
+                    // Reset periods
+                    this.customPeriods = [];
+                    localStorage.removeItem('lm-custom-periods');
+                    
+                    // Update config modal
+                    document.getElementById('timerModeSelect').value = 'progressive';
+                    document.getElementById('timerDurationInput').value = 45;
+                    
+                    this.resetTimer();
+                    this.updateTimerModeIndicator();
+                    this.saveTimerConfig();
+                    
+                    this.showNotification('Configurações resetadas!');
+                }
+            }
+
+            updateTimerModePreview(mode) {
+                // Visual preview of mode change (optional)
+                console.log('Timer mode preview:', mode);
+            }
+
+            updateTimerDurationPreview(duration) {
+                // Visual preview of duration change (optional)
+                console.log('Timer duration preview:', duration, 'minutes');
+            }
+
+            saveTimerConfig() {
+                const config = {
+                    mode: this.data.timer.mode,
+                    maxTime: this.data.timer.maxTime
+                };
+                localStorage.setItem('lm-timer-config', JSON.stringify(config));
+            }
+
+            async syncWithMain(additionalData = {}) {
+                // Flag para evitar loop durante polling
+                if (this.isUpdatingFromExternal) return;
+
+                try {
+                    const dataToSend = {
+                        ...this.data,
+                        ...additionalData
+                    };
+                    
+                    const response = await fetch('/data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dataToSend)
+                    });
+                    
+                    if (response.ok) {
+                        console.log('✅ Sync successful');
+                    } else {
+                        console.warn('⚠️ Sync failed:', response.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Sync error:', error);
+                }
+            }
+
+            // ===============================
+            // UI UPDATES
+            // ===============================
+
+            updateDisplay() {
+                document.getElementById('homeScore').textContent = this.data.score.home;
+                document.getElementById('awayScore').textContent = this.data.score.away;
+                document.getElementById('homeTeamName').textContent = this.data.teams.home;
+                document.getElementById('awayTeamName').textContent = this.data.teams.away;
+                document.getElementById('periodDisplay').firstChild.textContent = this.data.period;
+                document.getElementById('timerDisplay').textContent = this.data.timer.time;
+                
+                this.updateOverlayButton();
+                this.updateTimerButtons();
+                this.updateActivePeriodOption();
+                this.updateTimerModeIndicator();
+            }
+
+            // ===============================
+            // UTILITIES
+            // ===============================
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    background: var(--lm-red);
+                    color: white;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    z-index: 1000;
+                    animation: slideIn 0.3s ease;
+                `;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                    notification.remove();
+                }, 2000);
+            }
+        }
+
+        // ===============================
+        // INITIALIZATION
+        // ===============================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load saved theme
+            const savedTheme = localStorage.getItem('lm-dock-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Initialize dock
+            window.dock = new LiveMestreDock();
+            
+            console.log('🚀 LiveMestre Dock carregado!');
+            console.log('📐 Dimensões: 450x280px');
+            console.log('⌨️ Hotkeys: F1-F5, F8, Space');
+        });
+    </script>
+</body>
+</html>
