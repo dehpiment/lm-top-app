@@ -1159,6 +1159,28 @@
         // LIVEMESTRE DOCK - COMPACT DASHBOARD
         // ===============================
 
+        // ===============================
+        // 🚨 DEVELOPER GUIDELINES - SWAP TEAMS
+        // ===============================
+        // 
+        // ⚠️ ATENÇÃO: Sempre que adicionar novos dados por time, 
+        // LEMBRE-SE de atualizar a função swapTeams()!
+        //
+        // 📋 DADOS ATUAIS QUE SÃO TROCADOS:
+        // ✅ score: { home, away }
+        // ✅ teams: { home, away } 
+        // ✅ colors: { home, away }
+        //
+        // 🔮 DADOS FUTUROS PARA IMPLEMENTAR:
+        // ⚽ sets: { home, away } (vôlei)
+        // ⚽ fouls: { home, away } (futsal/basquete)
+        // ⚽ timeouts: { home, away } (basquete)
+        // ⚽ cards: { home: {yellow, red}, away: {yellow, red} } (futebol)
+        // ⚽ serving: 'home'|'away' (vôlei - quem saca)
+        //
+        // 🎯 REGRA: Se tem .home e .away, vai no swap!
+        // ===============================
+
         class LiveMestreDock {
             constructor() {
                 this.data = {
@@ -1422,20 +1444,63 @@
             }
 
             swapTeams() {
-                // Swap all team data
-                const tempScore = this.data.score.home;
-                const tempName = this.data.teams.home;
+                // ===============================
+                // SWAP COMPLETO DE TIMES
+                // ⚠️ ATENÇÃO DESENVOLVEDORES: 
+                // Sempre que adicionar novos dados de times (sets, faltas, timeouts, etc.)
+                // LEMBRE-SE de atualizar esta função para trocar TUDO!
+                // ===============================
                 
+                // Swap score
+                const tempScore = this.data.score.home;
                 this.data.score.home = this.data.score.away;
                 this.data.score.away = tempScore;
                 
+                // Swap names
+                const tempName = this.data.teams.home;
                 this.data.teams.home = this.data.teams.away;
                 this.data.teams.away = tempName;
+                
+                // 🎨 NEW: Swap colors
+                const tempColor = this.data.colors.home;
+                this.data.colors.home = this.data.colors.away;
+                this.data.colors.away = tempColor;
+                
+                // TODO: FUTURAS IMPLEMENTAÇÕES - ADICIONAR AQUI:
+                // 🏐 VÔLEI: Swap sets, serving
+                // if (this.data.sets) {
+                //     const tempSets = this.data.sets.home;
+                //     this.data.sets.home = this.data.sets.away;
+                //     this.data.sets.away = tempSets;
+                // }
+                // if (this.data.serving) {
+                //     this.data.serving = this.data.serving === 'home' ? 'away' : 'home';
+                // }
+                
+                // ⚽ FUTSAL: Swap fouls, cards
+                // if (this.data.fouls) {
+                //     const tempFouls = this.data.fouls.home;
+                //     this.data.fouls.home = this.data.fouls.away;
+                //     this.data.fouls.away = tempFouls;
+                // }
+                
+                // 🏀 BASQUETE: Swap timeouts, quarters
+                // if (this.data.timeouts) {
+                //     const tempTimeouts = this.data.timeouts.home;
+                //     this.data.timeouts.home = this.data.timeouts.away;
+                //     this.data.timeouts.away = tempTimeouts;
+                // }
 
                 this.updateDisplay();
                 this.syncWithMain();
                 
-                this.showNotification('Times trocados!');
+                this.showNotification('Times trocados (cores incluídas)!');
+                
+                console.log('🔄 Swap completo realizado:', {
+                    scores: `${this.data.score.home}x${this.data.score.away}`,
+                    teams: `${this.data.teams.home} vs ${this.data.teams.away}`,
+                    colors: `${this.data.colors.home} vs ${this.data.colors.away}`
+                });
             }
 
             // ===============================
@@ -2098,6 +2163,29 @@
             console.log('📐 Dimensões: 450x280px');
             console.log('⌨️ Hotkeys: F1-F5, F8, Space');
         });
+
+// ===============================
+// 📋 CHECKLIST PARA NOVAS FEATURES
+// ===============================
+//
+// Ao implementar novos módulos esportivos:
+//
+// 1. ✅ Adicionar dados na estrutura this.data
+// 2. ✅ Atualizar função swapTeams() 
+// 3. ✅ Atualizar updateDisplay()
+// 4. ✅ Atualizar syncWithMain() se necessário
+// 5. ✅ Atualizar hasDataChanged()
+// 6. ✅ Atualizar updateFromExternalData()
+// 7. ✅ Testar swap completo
+//
+// 🎯 MÓDULOS PLANEJADOS:
+// - 🏐 Vôlei: Sets, Serving, Rally
+// - ⚽ Futsal: Faltas, Cartões
+// - 🏀 Basquete: Timeouts, Quartos, +2/+3
+// - ⚽ Futebol: Cartões, Tempo adicional
+//
+// ===============================
+
     </script>
 </body>
 </html>
