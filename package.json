@@ -62,7 +62,7 @@
     },
     "dmg": {
       "title": "LiveMestre Overlay",
-      "backgroundColor": "#E31E24",
+      "backgroundColor": "red",
       "window": {
         "width": 600,
         "height": 400
