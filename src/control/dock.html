@@ -294,9 +294,9 @@
             background: var(--timer-bg);
             border: 1px solid var(--section-border);
             border-radius: 8px;
-            padding: 10px; /* ← Corrigir de 8px para 10px (consistente) */
-            gap: 8px; /* ← Manter 8px (adequado para timer) */
-            position: relative; /* ← Garantir para o mode indicator */
+            padding: 8px; /* ← Manter 8px para caber tudo */
+            gap: 4px; /* ← Reduzir gap de 8px para 4px */
+            position: relative;
         }
 
         .timer-section:hover {
@@ -326,29 +326,81 @@
 
         .timer-display {
             font-family: 'Courier New', monospace;
-            font-size: 28px;
+            font-size: 24px; /* ← Reduzir de 28px para 24px */
             font-weight: bold;
             color: var(--lm-yellow);
             text-align: center;
             letter-spacing: 1px;
+            cursor: pointer; /* ← Preparar para edição */
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .timer-display:hover {
+        background: rgba(255, 215, 0, 0.1);
+        transform: scale(1.02);
         }
 
         .timer-controls {
             display: flex;
             gap: 2px;
             width: 100%;
+            margin-bottom: 2px; /* ← Pequeno espaço antes dos adjust */
         }
 
         .timer-btn {
             flex: 1;
-            height: 24px;
+            height: 20px; /* ← Reduzir de 24px para 20px */
             border: none;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 10px;
+            font-size: 9px; /* ← Reduzir de 10px para 9px */
             background: var(--button-bg);
             color: var(--text-primary);
             transition: all 0.2s ease;
+        }
+
+        /* 🆕 BOTÕES DE AJUSTE */
+        .timer-adjust-controls {
+            display: flex;
+            gap: 1px;
+            width: 100%;
+            margin-bottom: 3px;
+        }
+
+        .timer-adjust-btn {
+            flex: 1;
+            height: 18px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 8px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-adjust-btn.minus {
+            background: #DC3545;
+            color: white;
+        }
+
+        .timer-adjust-btn.minus:hover {
+            background: #C82333;
+            transform: scale(1.05);
+        }
+
+        .timer-adjust-btn.plus {
+            background: #28A745;
+            color: white;
+        }
+
+        .timer-adjust-btn.plus:hover {
+            background: #218838;
+            transform: scale(1.05);
         }
 
         .timer-btn:hover {
@@ -358,13 +410,13 @@
         }
 
         .period-display {
-            font-size: 10px;
+            font-size: 9px; /* ← Reduzir de 10px para 9px */
             font-weight: bold;
             color: var(--text-secondary);
             text-align: center;
             cursor: pointer;
-            padding: 2px 4px;
-            border-radius: 4px;
+            padding: 1px 3px; /* ← Reduzir padding */
+            border-radius: 3px;
             transition: all 0.2s ease;
             position: relative;
             display: flex;
@@ -372,7 +424,6 @@
             justify-content: center;
             gap: 2px;
         }
-
         .period-display:hover {
             background: rgba(255, 255, 255, 0.1);
             color: var(--text-primary);
@@ -539,17 +590,17 @@
 
         .vs-overlay {
             position: absolute;
-            top: 70%; /* ← Posição abaixo do timer */
+            top: 72%; /* ← Mover mais para baixo, de 70% para 75% */
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 35px;
-            height: 35px;
+            width: 30px; /* ← Reduzir de 35px para 30px */
+            height: 30px;
             background: var(--lm-red);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px; /* ← Reduzir de 11px para 10px */
             font-weight: bold;
             color: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -966,6 +1017,33 @@
                 display: none;
             }
         }
+
+        /* Timer edit animations */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        .timer-pulse {
+            animation: timerEditPulse 0.6s ease;
+        }
+
+        @keyframes timerEditPulse {
+            0%, 100% { 
+                transform: scale(1); 
+                color: var(--lm-yellow);
+            }
+            50% { 
+                transform: scale(1.1); 
+                color: #FFE55C;
+                text-shadow: 0 0 10px var(--lm-yellow);
+            }
+        }
     </style>
 </head>
 <body>
@@ -998,14 +1076,28 @@
         <!-- Timer Section -->
         <div class="timer-section">
             <div class="timer-mode-indicator" id="timerModeIndicator">↑</div>
-            <div class="timer-display" id="timerDisplay">00:00</div>
+            
+            <!-- Timer Display (editável no futuro) -->
+            <div class="timer-display" id="timerDisplay" title="Duplo click para editar">00:00</div>
+            
+            <!-- Timer Controls Principais -->
             <div class="timer-controls">
                 <button class="timer-btn" id="timerPlay">▶</button>
                 <button class="timer-btn" id="timerPause">⏸</button>
                 <button class="timer-btn" id="timerReset">⏹</button>
             </div>
-            <div class="period-display" id="periodDisplay" title="Click to change">
-                1º TEMPO
+            
+            <!-- 🆕 NOVOS BOTÕES DE AJUSTE -->
+            <div class="timer-adjust-controls">
+                <button class="timer-adjust-btn minus" data-adjust="-60" title="-1 minuto">-1min</button>
+                <button class="timer-adjust-btn minus" data-adjust="-30" title="-30 segundos">-30s</button>
+                <button class="timer-adjust-btn plus" data-adjust="30" title="+30 segundos">+30s</button>
+                <button class="timer-adjust-btn plus" data-adjust="60" title="+1 minuto">+1min</button>
+            </div>
+            
+            <!-- Period Display -->
+            <div class="period-display" id="periodDisplay" title="Click para mudar">
+                2º TEMPO
                 <div class="period-dropdown" id="periodDropdown">
                     <div class="period-option active" data-period="1º TEMPO">1º TEMPO</div>
                     <div class="period-option" data-period="2º TEMPO">2º TEMPO</div>
@@ -1015,6 +1107,7 @@
                     <div class="period-option custom" data-period="CUSTOM">PERSONALIZADO...</div>
                 </div>
             </div>
+            
             <div class="hotkey-hint">Space: Play/Pause</div>
         </div>
 
@@ -1276,6 +1369,19 @@
                     this.resetTimer();
                 });
 
+                // 🆕 TIMER v1.1 - Botões de ajuste
+                document.querySelectorAll('.timer-adjust-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const adjustSeconds = parseInt(e.target.dataset.adjust);
+                        this.adjustTimer(adjustSeconds);
+                    });
+                });
+
+                // 🆕 Timer Display editável (preparação futura)
+                document.getElementById('timerDisplay').addEventListener('dblclick', () => {
+                    this.editTimer();
+                });
+
                 // Period toggle
                 document.getElementById('periodDisplay').addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1372,10 +1478,6 @@
                     this.resetScore();
                 });
                 
-                document.getElementById('configBtn').addEventListener('click', () => {
-                    this.openConfig();
-                });
-                
                 document.getElementById('themeBtn').addEventListener('click', () => {
                     this.toggleTheme();
                 });
@@ -1392,6 +1494,7 @@
 
             setupHotkeys() {
                 document.addEventListener('keydown', (e) => {
+                    // Hotkeys básicas
                     switch(e.code) {
                         case 'F1':
                             e.preventDefault();
@@ -1422,7 +1525,281 @@
                             this.data.timer.isRunning ? this.pauseTimer() : this.startTimer();
                             break;
                     }
+
+                    // 🆕 TIMER v1.1 - Hotkeys de ajuste (Ctrl + setas)
+                    if (e.ctrlKey) {
+                        switch(e.code) {
+                            case 'ArrowUp':
+                                e.preventDefault();
+                                this.adjustTimer(60); // +1min
+                                break;
+                            case 'ArrowDown':
+                                e.preventDefault();
+                                this.adjustTimer(-60); // -1min
+                                break;
+                            case 'ArrowRight':
+                                e.preventDefault();
+                                this.adjustTimer(30); // +30s
+                                break;
+                            case 'ArrowLeft':
+                                e.preventDefault();
+                                this.adjustTimer(-30); // -30s
+                                break;
+                        }
+                    }
                 });
+            }
+
+            // ===============================
+            // 🆕 NOVA FUNÇÃO - AJUSTE DO TIMER
+            // ===============================
+
+        adjustTimer(seconds) {
+            // Calcular novo tempo
+            const currentSeconds = this.data.timer.currentSeconds || 0;
+            let newSeconds = currentSeconds + seconds;
+            
+            // Aplicar limites baseados no modo
+            if (this.data.timer.mode === 'progressive') {
+                // 🔧 PROGRESSIVO: 0 até maxTime (limitado)
+                newSeconds = Math.max(0, Math.min(newSeconds, this.data.timer.maxTime));
+            } else {
+                // 🔧 REGRESSIVO: Apenas limite inferior (0), SEM limite superior
+                newSeconds = Math.max(0, newSeconds);
+                // Remove: Math.min(newSeconds, this.data.timer.maxTime)
+                // Agora pode ir além dos 20min configurados!
+            }
+            
+            // Enviar comando para main.js
+            this.sendTimerCommand('setTime', { seconds: newSeconds });
+            
+            // Feedback visual
+            const operation = seconds > 0 ? '+' : '';
+            const timeStr = Math.abs(seconds) >= 60 ? 
+                `${operation}${Math.abs(seconds/60)}min` : 
+                `${operation}${Math.abs(seconds)}s`;
+            
+            this.showNotification(`Timer: ${timeStr}`);
+            
+            // Log para debug
+            console.log(`⏱️ Timer ajustado: ${timeStr} (novo: ${newSeconds}s, modo: ${this.data.timer.mode})`);
+            
+            // Animação visual no display
+            const display = document.getElementById('timerDisplay');
+            display.classList.add('timer-pulse');
+            setTimeout(() => {
+                display.classList.remove('timer-pulse');
+            }, 400);
+        }
+
+            // ===============================
+            // 🆕 FUNÇÃO DE PRESET (FUTURO)
+            // ===============================
+
+            setTimerPreset(minutes) {
+                const seconds = minutes * 60;
+                
+                // Definir novo tempo máximo
+                this.data.timer.maxTime = seconds;
+                
+                // Resetar timer para o preset
+                if (this.data.timer.mode === 'progressive') {
+                    this.sendTimerCommand('setTime', { seconds: 0 });
+                } else {
+                    this.sendTimerCommand('setTime', { seconds: seconds });
+                }
+                
+                // Salvar configuração
+                this.saveTimerConfig();
+                
+                this.showNotification(`Preset: ${minutes}min aplicado!`);
+                
+                console.log(`⚙️ Preset aplicado: ${minutes}min (${this.data.timer.mode})`);
+            }
+
+            // ===============================
+            // NOVA FUNÇÃO - EDITAR TIMER
+            // ===============================
+
+            editTimer() {
+                const display = document.getElementById('timerDisplay');
+                const currentTime = display.textContent;
+                
+                // Criar input field
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentTime;
+                input.id = 'timerEditInput'; // ← Adicionar ID para identificar
+                input.style.cssText = `
+                    font-family: 'Courier New', monospace;
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: var(--lm-yellow);
+                    background: rgba(255, 215, 0, 0.1);
+                    border: 2px solid var(--lm-yellow);
+                    border-radius: 4px;
+                    text-align: center;
+                    letter-spacing: 1px;
+                    padding: 2px 6px;
+                    width: 100%;
+                    outline: none;
+                    box-sizing: border-box;
+                `;
+                
+                // 🔧 FIX: Substituir com preservação da estrutura
+                const parent = display.parentNode;
+                parent.replaceChild(input, display);
+                
+                input.focus();
+                input.select();
+                
+                // 🔧 FIX: Função para finalizar edição mais robusta
+                const finishEdit = (save = true) => {
+                    // Verificar se input ainda existe (evitar double-finish)
+                    const currentInput = document.getElementById('timerEditInput');
+                    if (!currentInput) return;
+                    
+                    let newTime = null;
+                    
+                    if (save && currentInput.value.trim()) {
+                        newTime = this.parseTimeInput(currentInput.value.trim());
+                        if (newTime !== null) {
+                            this.applyNewTime(newTime);
+                            this.showNotification(`Timer: ${this.formatTimeFromSeconds(newTime)}`, 'success');
+                        } else {
+                            this.showNotification('Formato inválido! Use MM:SS ou MM', 'error');
+                        }
+                    }
+                    
+                    // 🔧 FIX: Restaurar display original corretamente
+                    const newDisplay = document.createElement('div');
+                    newDisplay.className = 'timer-display';
+                    newDisplay.id = 'timerDisplay';
+                    newDisplay.title = 'Duplo click para editar';
+                    newDisplay.textContent = this.data.timer.time;
+                    
+                    // Substituir input pelo display restaurado
+                    parent.replaceChild(newDisplay, currentInput);
+                    
+                    console.log('✅ Timer edit finalizado, display restaurado');
+                    
+                    // 🔧 FIX: Re-adicionar event listener
+                    newDisplay.addEventListener('dblclick', () => {
+                        this.editTimer();
+                    });
+                };
+                
+                // Event listeners do input
+                input.addEventListener('keydown', (e) => {
+                    e.stopPropagation(); // Evitar hotkeys globais
+                    
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        finishEdit(true);
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        finishEdit(false);
+                    }
+                });
+                
+                // 🔧 FIX: Blur com timeout para evitar conflitos
+                input.addEventListener('blur', (e) => {
+                    // Delay pequeno para permitir outros eventos
+                    setTimeout(() => {
+                        finishEdit(true);
+                    }, 100);
+                });
+                
+                console.log('✏️ Timer em modo de edição');
+            }
+
+
+            // ===============================
+            // FUNÇÃO - PARSE TIME INPUT
+            // ===============================
+
+            parseTimeInput(input) {
+                console.log(`🔍 Parsing input: "${input}"`);
+                
+                // Remover espaços e caracteres especiais, manter apenas números e :
+                const clean = input.replace(/[^\d:]/g, '');
+                
+                if (!clean) return null;
+                
+                let minutes = 0;
+                let seconds = 0;
+                
+                if (clean.includes(':')) {
+                    // Formato MM:SS ou :SS
+                    const parts = clean.split(':');
+                    if (parts.length === 2) {
+                        minutes = parseInt(parts[0]) || 0;
+                        seconds = parseInt(parts[1]) || 0;
+                    } else {
+                        console.log(`❌ Parse error: formato inválido "${clean}"`);
+                        return null;
+                    }
+                } else {
+                    // Formato MM (apenas minutos)
+                    minutes = parseInt(clean) || 0;
+                    seconds = 0;
+                }
+                
+                // Validações
+                if (minutes < 0 || seconds < 0 || seconds >= 60) {
+                    console.log(`❌ Parse error: valores inválidos ${minutes}:${seconds}`);
+                    return null;
+                }
+                
+                if (minutes > 99) {
+                    console.log(`❌ Parse error: minutos > 99`);
+                    return null;
+                }
+                
+                const totalSeconds = (minutes * 60) + seconds;
+                console.log(`✅ Parse success: "${input}" → ${minutes}:${seconds} = ${totalSeconds}s`);
+                return totalSeconds;
+            }
+
+            // ===============================
+            // FUNÇÃO - APLICAR NOVO TEMPO
+            // ===============================
+
+            applyNewTime(seconds) {
+                console.log(`⏱️ Aplicando novo tempo: ${seconds}s`);
+                
+                // Enviar comando para main.js
+                this.sendTimerCommand('setTime', { seconds: seconds });
+                
+                // 🔧 FIX: Forçar atualização imediata dos dados locais
+                this.data.timer.currentSeconds = seconds;
+                this.data.timer.time = this.formatTimeFromSeconds(seconds);
+                
+                // 🔧 FIX: Forçar atualização do display
+                setTimeout(() => {
+                    const display = document.getElementById('timerDisplay');
+                    if (display) {
+                        display.textContent = this.data.timer.time;
+                        
+                        // Animação visual
+                        display.classList.add('timer-pulse');
+                        setTimeout(() => {
+                            display.classList.remove('timer-pulse');
+                        }, 600);
+                    }
+                }, 50);
+                
+                console.log(`✅ Tempo aplicado: ${this.formatTimeFromSeconds(seconds)}`);
+            }
+
+            // ===============================
+            // FUNÇÃO - FORMATAR TEMPO
+            // ===============================
+
+            formatTimeFromSeconds(totalSeconds) {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
 
             // ===============================
@@ -2176,26 +2553,46 @@
             // UTILITIES
             // ===============================
 
-            showNotification(message) {
+            showNotification(message, type = 'info') {
+                // Remover notificação anterior se existir
+                const existing = document.querySelector('.lm-notification');
+                if (existing) existing.remove();
+                
                 const notification = document.createElement('div');
+                notification.className = 'lm-notification';
+                notification.textContent = message;
+                
+                // Cores por tipo
+                const colors = {
+                    info: 'var(--lm-red)',
+                    success: '#28A745', 
+                    error: '#DC3545',
+                    warning: '#FFC107'
+                };
+                
                 notification.style.cssText = `
                     position: fixed;
                     top: 10px;
                     right: 10px;
-                    background: var(--lm-red);
+                    background: ${colors[type] || colors.info};
                     color: white;
                     padding: 8px 12px;
                     border-radius: 6px;
-                    font-size: 12px;
+                    font-size: 11px;
+                    font-weight: bold;
                     z-index: 1000;
-                    animation: slideIn 0.3s ease;
+                    animation: slideInRight 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                    border-left: 4px solid rgba(255, 255, 255, 0.5);
                 `;
-                notification.textContent = message;
                 
                 document.body.appendChild(notification);
                 setTimeout(() => {
-                    notification.remove();
-                }, 2000);
+                    if (notification.parentNode) {
+                        notification.style.animation = 'slideOutRight 0.3s ease';
+                        setTimeout(() => notification.remove(), 300);
+                    }
+                }, type === 'error' ? 3000 : 2000); // Erros ficam mais tempo
             }
         }
 
