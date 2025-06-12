@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiveMestre Overlay - OBS Output</title>
-    <style>
+<style>
         /* ===============================
            LIVEMESTRE OVERLAY - OBS OUTPUT
            Canvas: 1920x1080 (Browser Source)
@@ -18,6 +18,12 @@
           --lm-gray: #2C2C2C;
           --lm-gray-light: #4A4A4A;
           --lm-yellow: #FFD700;
+          
+          /* Cores dinâmicas dos times */
+          --team-home-color: #E31E24;
+          --team-away-color: #0066CC;
+          --team-home-bg: rgba(227, 30, 36, 0.1);
+          --team-away-bg: rgba(0, 102, 204, 0.1);
           
           /* Sombras e efeitos */
           --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
@@ -127,6 +133,7 @@
           align-items: center;
           gap: 10px;
           min-width: 200px;
+          position: relative;
         }
 
         .team-name {
@@ -152,6 +159,68 @@
           -webkit-text-fill-color: transparent;
           background-clip: text;
           filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8));
+        }
+
+        /* ===============================
+           TEAM COLORS SYSTEM
+           =============================== */
+
+        /* Aplicar cores nos scores - versão compatível */
+        .team-section.team-home .team-score {
+          background: linear-gradient(45deg, var(--team-home-color), #FF4444);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8));
+        }
+
+        .team-section.team-away .team-score {
+          background: linear-gradient(45deg, var(--team-away-color), #4488FF);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8));
+        }
+
+        /* Indicadores visuais de cor */
+        .team-section.team-home::before {
+          content: '';
+          position: absolute;
+          top: -5px;
+          left: -5px;
+          width: 4px;
+          height: calc(100% + 10px);
+          background: var(--team-home-color);
+          border-radius: 2px;
+          box-shadow: 0 0 10px var(--team-home-color);
+        }
+
+        .team-section.team-away::before {
+          content: '';
+          position: absolute;
+          top: -5px;
+          right: -5px;
+          width: 4px;
+          height: calc(100% + 10px);
+          background: var(--team-away-color);
+          border-radius: 2px;
+          box-shadow: 0 0 10px var(--team-away-color);
+        }
+
+        /* Efeito de pulsação quando score muda */
+        .team-score.score-update {
+          animation: scoreColorFlash 0.6s ease;
+        }
+
+        @keyframes scoreColorFlash {
+          0%, 100% { 
+            transform: scale(1); 
+            filter: brightness(1) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8));
+          }
+          50% { 
+            transform: scale(1.1); 
+            filter: brightness(1.5) drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8));
+          }
         }
 
         .vs-section {
@@ -401,7 +470,7 @@
           from { opacity: 1; transform: translateY(0); }
           to { opacity: 0; transform: translateY(50px); }
         }
-    </style>
+</style>
 </head>
 <body>
     <!-- Canvas principal 1920x1080 -->
@@ -616,6 +685,7 @@
                     score: { home: 0, away: 0 },
                     teams: { home: 'AGUARDANDO', away: 'CONEXÃO' },
                     clock: { time: '--:--', period: 'CARREGANDO' },
+                    colors: { home: '#E31E24', away: '#0066CC' }, // ← Adicionar cores
                     isVisible: true,
                     theme: 'light'
                 };
@@ -638,6 +708,11 @@
 
             setupDataSync() {
                 this.dataReader = new DataReader((newData) => {
+                    // 🎨 Mesclar cores se existirem
+                    if (newData.colors) {
+                        this.data.colors = { ...this.data.colors, ...newData.colors };
+                    }
+                    
                     this.data = { ...this.data, ...newData };
                     this.updateDisplay();
                 });
@@ -689,6 +764,7 @@
                 this.updateScore();
                 this.updateTeams();
                 this.updateClock();
+                this.updateTeamColors(); // ← Adicionar cores
                 this.updateVisibility();
             }
 
@@ -705,6 +781,33 @@
             updateClock() {
                 document.getElementById('clockTime').textContent = this.data.clock.time;
                 document.getElementById('clockPeriod').textContent = this.data.clock.period;
+            }
+
+            // 🎨 Nova função para atualizar cores dos times
+            updateTeamColors() {
+                const homeColor = this.data.colors?.home || '#E31E24';
+                const awayColor = this.data.colors?.away || '#0066CC';
+                
+                // Atualizar CSS custom properties
+                document.documentElement.style.setProperty('--team-home-color', homeColor);
+                document.documentElement.style.setProperty('--team-away-color', awayColor);
+                
+                // Criar backgrounds transparentes
+                const homeRgba = this.hexToRgba(homeColor, 0.1);
+                const awayRgba = this.hexToRgba(awayColor, 0.1);
+                
+                document.documentElement.style.setProperty('--team-home-bg', homeRgba);
+                document.documentElement.style.setProperty('--team-away-bg', awayRgba);
+                
+                console.log('🎨 Cores aplicadas:', { home: homeColor, away: awayColor });
+            }
+
+            // Função auxiliar para converter hex para rgba
+            hexToRgba(hex, alpha = 1) {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
             }
 
             updateVisibility() {
@@ -744,26 +847,36 @@
                     {
                         score: { home: 1, away: 0 },
                         teams: { home: 'FLAMENGO', away: 'VASCO' },
-                        clock: { time: '15:30', period: '1º TEMPO' }
+                        clock: { time: '15:30', period: '1º TEMPO' },
+                        colors: { home: '#E31E24', away: '#000000' } // Teste com cores
                     },
                     {
                         score: { home: 2, away: 1 },
                         teams: { home: 'PALMEIRAS', away: 'CORINTHIANS' },
-                        clock: { time: '38:42', period: '1º TEMPO' }
+                        clock: { time: '38:42', period: '1º TEMPO' },
+                        colors: { home: '#28A745', away: '#FFFFFF' }
                     },
                     {
                         score: { home: 0, away: 2 },
                         teams: { home: 'SANTOS', away: 'SÃO PAULO' },
-                        clock: { time: '67:15', period: '2º TEMPO' }
+                        clock: { time: '67:15', period: '2º TEMPO' },
+                        colors: { home: '#000000', away: '#E31E24' }
                     },
                     {
                         score: { home: 3, away: 3 },
                         teams: { home: 'GRÊMIO', away: 'INTERNACIONAL' },
-                        clock: { time: '90:00', period: 'PRORROGAÇÃO' }
+                        clock: { time: '90:00', period: 'PRORROGAÇÃO' },
+                        colors: { home: '#0066CC', away: '#DC3545' }
                     }
                 ];
                 
                 const randomData = testDataSets[Math.floor(Math.random() * testDataSets.length)];
+                
+                // Mesclar cores
+                if (randomData.colors) {
+                    this.data.colors = { ...this.data.colors, ...randomData.colors };
+                }
+                
                 this.data = { ...this.data, ...randomData };
                 this.updateDisplay();
                 

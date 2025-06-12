@@ -44,11 +44,23 @@
             box-sizing: border-box;
         }
 
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #5A5A5A !important; /* ← Forçar fundo cinza */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: transparent;
             overflow: hidden;
             user-select: none;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            min-width: 100vw;
         }
 
         /* ===============================
@@ -56,8 +68,8 @@
            =============================== */
 
         .dock {
-            width: 450px;
-            height: 280px;
+            width: 500px;
+            height: 320px;
             background: var(--dock-bg);
             border: 2px solid var(--dock-border);
             border-radius: 12px;
@@ -69,9 +81,14 @@
                 "header header header"
                 "team-home timer team-away"
                 "controls controls controls";
-            grid-template-rows: 40px 1fr 50px;
-            grid-template-columns: 1fr 120px 1fr;
-            gap: 8px;
+            grid-template-rows: 40px 1fr 60px;
+            grid-template-columns: 1fr 140px 1fr;
+            gap: 10px;
+            
+            /* ← CENTRALIZAÇÃO PERFEITA */
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
         }
 
         /* ===============================
@@ -83,7 +100,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 8px;
+            padding: 0 12px; /* ← Corrigir de 8px para 12px (consistente) */
             background: linear-gradient(90deg, var(--lm-red), #C41E24);
             border-radius: 8px;
             color: white;
@@ -134,8 +151,8 @@
             background: var(--score-bg);
             border: 1px solid var(--section-border);
             border-radius: 8px;
-            padding: 8px;
-            gap: 8px;
+            padding: 10px; /* ← Corrigir de 8px para 10px (melhor espaçamento) */
+            gap: 10px; /* ← Corrigir de 8px para 10px (consistente) */
             transition: all 0.2s ease;
             position: relative;
         }
@@ -277,8 +294,9 @@
             background: var(--timer-bg);
             border: 1px solid var(--section-border);
             border-radius: 8px;
-            padding: 8px;
-            gap: 6px;
+            padding: 10px; /* ← Corrigir de 8px para 10px (consistente) */
+            gap: 8px; /* ← Manter 8px (adequado para timer) */
+            position: relative; /* ← Garantir para o mode indicator */
         }
 
         .timer-section:hover {
@@ -459,26 +477,30 @@
         .dock-controls {
             grid-area: controls;
             display: flex;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
             justify-content: center;
-            padding: 4px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
 
         .control-btn {
-            height: 36px;
-            padding: 0 12px;
+            height: 40px; /* ← Corrigir de 36px para 40px (igual ao que foi planejado) */
+            padding: 0 14px; /* ← Corrigir de 12px para 14px (melhor espaçamento) */
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 12px; /* ← Corrigir de 11px para 12px (melhor legibilidade) */
             font-weight: bold;
             background: var(--button-bg);
             color: var(--text-primary);
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px; /* ← Corrigir de 4px para 6px (melhor espaçamento) */
+            min-width: 90px; /* ← Adicionar largura mínima para uniformidade */
+            justify-content: center; /* ← Adicionar centralização */
         }
 
         .control-btn:hover {
@@ -517,21 +539,22 @@
 
         .vs-overlay {
             position: absolute;
-            top: 50%;
+            top: 70%; /* ← Posição abaixo do timer */
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             background: var(--lm-red);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
             color: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             z-index: 10;
+            border: 2px solid white;
         }
 
         /* ===============================
@@ -1539,12 +1562,14 @@
                 if (this.data.timer.mode === 'progressive') {
                     indicator.textContent = '↑';
                     indicator.className = 'timer-mode-indicator progressive';
-                    indicator.title = 'Progressivo';
+                    indicator.title = 'Progressivo (0→45min)';
                 } else {
                     indicator.textContent = '↓';
                     indicator.className = 'timer-mode-indicator regressive';
-                    indicator.title = 'Regressivo';
+                    indicator.title = 'Regressivo (20→0min)';
                 }
+                
+                console.log('🎯 Indicador atualizado:', this.data.timer.mode);
             }
 
             updateTimerButtons() {
@@ -1628,7 +1653,17 @@
                 this.data.period = period;
                 document.getElementById('periodDisplay').firstChild.textContent = period;
                 this.updateActivePeriodOption();
-                this.syncWithMain();
+                
+                const clockData = {
+                    clock: {
+                        time: this.data.timer.time,
+                        period: period
+                    }
+                };
+                
+                this.syncWithMain(clockData);
+                
+                console.log('⚽ Período atualizado:', period);
             }
 
             updateActivePeriodOption() {
@@ -1898,16 +1933,19 @@
                     const config = JSON.parse(saved);
                     this.data.timer.mode = config.mode || 'progressive';
                     this.data.timer.maxTime = config.maxTime || 2700;
+                    
+                    console.log('📂 Config carregada do localStorage:', config);
                 }
                 
-                // Inicializar timerSeconds corretamente
-                if (this.data.timer.mode === 'regressive') {
-                    this.timerSeconds = this.data.timer.maxTime;
-                } else {
-                    this.timerSeconds = 0;
-                }
+                // 🔧 FIX: Enviar config inicial para main.js
+                this.sendTimerCommand('setMode', {
+                    mode: this.data.timer.mode,
+                    maxTime: this.data.timer.maxTime
+                });
                 
-                this.updateTimerDisplay();
+                this.updateTimerModeIndicator();
+                
+                console.log('⚙️ Timer inicializado:', this.data.timer);
             }
 
             // ===============================
@@ -1962,21 +2000,27 @@
                 this.isUpdatingFromExternal = true;
                 this.lastExternalUpdate = externalData.lastUpdate || Date.now();
                 
-                // Atualizar dados básicos (sem fazer sync de volta)
+                // Atualizar dados básicos
                 this.data.score = { ...this.data.score, ...externalData.score };
                 this.data.teams = { ...this.data.teams, ...externalData.teams };
-                this.data.period = externalData.clock?.period || this.data.period;
+                
+                // 🔧 FIX: Sincronizar período corretamente
+                if (externalData.clock?.period) {
+                    this.data.period = externalData.clock.period;
+                }
+                
                 this.data.isVisible = externalData.isVisible ?? this.data.isVisible;
                 
                 // ⏰ TIMER CENTRALIZADO - receber do main.js
                 if (externalData.timer) {
+                    // 🔧 FIX: Sincronizar TODA a configuração do timer
                     this.data.timer = { ...this.data.timer, ...externalData.timer };
                     
-                    console.log('📥 Timer sincronizado:', {
-                        time: this.data.timer.time,
-                        running: this.data.timer.isRunning,
+                    console.log('📥 Timer config sincronizada:', {
                         mode: this.data.timer.mode,
-                        seconds: this.data.timer.currentSeconds
+                        maxTime: this.data.timer.maxTime,
+                        currentSeconds: this.data.timer.currentSeconds,
+                        isRunning: this.data.timer.isRunning
                     });
                 }
                 
@@ -1985,8 +2029,6 @@
                 
                 // Limpar flag
                 this.isUpdatingFromExternal = false;
-                
-                console.log('📥 Dados recebidos de fonte externa - Timer incluído');
             }
 
             resetTeamColors() {
@@ -1999,9 +2041,11 @@
             openConfigModal() {
                 const modal = document.getElementById('configModal');
                 
-                // Load current values
-                document.getElementById('timerModeSelect').value = this.data.timer.mode;
-                document.getElementById('timerDurationInput').value = Math.floor(this.data.timer.maxTime / 60);
+                console.log('⚙️ Abrindo config com:', this.data.timer);
+                
+                // 🔧 FIX: Carregar valores atuais do timer
+                document.getElementById('timerModeSelect').value = this.data.timer.mode || 'progressive';
+                document.getElementById('timerDurationInput').value = Math.floor((this.data.timer.maxTime || 2700) / 60);
                 
                 modal.classList.add('open');
             }
@@ -2012,25 +2056,32 @@
             }
 
             saveConfig() {
-                // Save timer config
+                // Capturar valores
                 const newMode = document.getElementById('timerModeSelect').value;
                 const newDuration = parseInt(document.getElementById('timerDurationInput').value) || 45;
                 
+                console.log('💾 Salvando config:', { mode: newMode, duration: newDuration });
+                
+                // Atualizar dados locais
                 this.data.timer.mode = newMode;
                 this.data.timer.maxTime = newDuration * 60; // Convert to seconds
                 
-                // Reset timer to new settings
-                this.resetTimer();
+                // 🔧 FIX: Enviar comando de setMode para main.js
+                this.sendTimerCommand('setMode', { 
+                    mode: newMode, 
+                    maxTime: newDuration * 60 
+                });
                 
-                // Save to localStorage
+                // Salvar localmente
                 this.saveTimerConfig();
                 
-                // Update display
+                // Atualizar display
                 this.updateTimerModeIndicator();
                 
                 this.closeConfigModal();
                 this.showNotification('Configurações salvas!');
-                this.syncWithMain();
+                
+                console.log('✅ Config aplicada:', this.data.timer);
             }
 
             resetConfig() {
