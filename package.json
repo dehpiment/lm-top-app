@@ -7,16 +7,28 @@
   "license": "MIT",
   "private": true,
   "scripts": {
+    "limpar": "rm -rf dist/ build/ out/ release/ node_modules/.cache && echo '✅ Diretórios de build limpos'",
+    "pre-build": "npm run limpar",
+    
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder",
-    "build:mac": "electron-builder --mac",
-    "build:win": "electron-builder --win",
-    "build:all": "electron-builder --mac --win",
-    "pack": "electron-builder --dir",
+    
+    "build": "npm run pre-build && electron-builder --publish=never",
+    "build:mac": "npm run pre-build && electron-builder --mac --publish=never",
+    "build:win": "npm run pre-build && electron-builder --win --publish=never",
+    "build:todos": "npm run pre-build && electron-builder --mac --win --publish=never",
+    "pack": "npm run pre-build && electron-builder --dir",
+    
+    "release": "npm run pre-build && electron-builder --publish=onTagOrDraft",
+    "release:rascunho": "npm run pre-build && electron-builder --publish=always",
+    
+    "pos-build": "echo '🎉 Build concluído! Arquivos em: dist/' && ls -la dist/ 2>/dev/null || echo 'Nenhum build encontrado'",
+    
+    "verificar-git": "git status --porcelain | grep -E '^(A|M).*dist/' && echo '❌ ERRO: Arquivos de build no git!' || echo '✅ Git limpo'",
+    "verificar-tamanho": "du -sh dist/ 2>/dev/null || echo 'Nenhum build encontrado'",
+    
     "postinstall": "electron-builder install-app-deps",
-    "clean": "rm -rf dist node_modules/.cache",
-    "test": "echo \"Tests não implementados ainda\" && exit 0"
+    "test": "echo \"Testes não implementados ainda\" && exit 0"
   },
   "build": {
     "appId": "com.livemestre.overlay",
