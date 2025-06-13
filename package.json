@@ -1,6 +1,6 @@
 {
   "name": "lm-top-app",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "LiveMestre Sports Overlay System",
   "main": "src/main/main.js",
   "author": "LiveMestre",
@@ -46,6 +46,10 @@
         {
           "target": "nsis",
           "arch": ["x64"]
+        },
+        {
+          "target": "portable", 
+          "arch": ["x64"]
         }
       ],
       "icon": "assets/icon.ico"
@@ -58,11 +62,11 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "artifactName": "LiveMestre-Overlay-Setup-${version}.exe"
     },
     "dmg": {
-      "title": "LiveMestre Overlay",
-      "backgroundColor": "red",
+      "title": "LiveMestre Overlay ${version}",
       "window": {
         "width": 600,
         "height": 400
