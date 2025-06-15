@@ -255,8 +255,9 @@
         }
 
         .clock-overlay.hidden {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-20px);
+            opacity: 0 !important;
+            transform: translateX(-50%) translateY(-20px) !important;
+            pointer-events: none;
         }
 
         .clock-container {
@@ -685,7 +686,12 @@
                     score: { home: 0, away: 0 },
                     teams: { home: 'AGUARDANDO', away: 'CONEXÃO' },
                     clock: { time: '--:--', period: 'CARREGANDO' },
-                    colors: { home: '#E31E24', away: '#0066CC' }, // ← Adicionar cores
+                    colors: { home: '#E31E24', away: '#0066CC' },
+                    timer: { 
+                        enabled: true, // 🆕 ADICIONAR PROPRIEDADE ENABLED
+                        time: '--:--',
+                        isRunning: false 
+                    },
                     isVisible: true,
                     theme: 'light'
                 };
@@ -779,6 +785,23 @@
             }
 
             updateClock() {
+                const clockOverlay = document.getElementById('clockOverlay');
+                
+                // 🆕 ESCONDER CLOCK SE TIMER ESTIVER DESABILITADO
+                if (this.data.timer && !this.data.timer.enabled) {
+                    if (clockOverlay) {
+                        clockOverlay.classList.add('hidden');
+                    }
+                    console.log('⏰ Clock overlay oculto - Timer desabilitado');
+                    return;
+                }
+                
+                // Timer habilitado - mostrar clock normalmente
+                if (clockOverlay) {
+                    clockOverlay.classList.remove('hidden');
+                }
+                
+                // Atualizar conteúdo
                 document.getElementById('clockTime').textContent = this.data.clock.time;
                 document.getElementById('clockPeriod').textContent = this.data.clock.period;
             }
@@ -813,15 +836,22 @@
             updateVisibility() {
                 const overlayElements = [
                     document.getElementById('scoreOverlay'),
-                    document.getElementById('clockOverlay'),
                     document.getElementById('infoOverlay')
                 ];
 
+                // 🆕 SÓ INCLUIR CLOCK SE TIMER HABILITADO
+                const clockOverlay = document.getElementById('clockOverlay');
+                if (this.data.timer && this.data.timer.enabled && clockOverlay) {
+                    overlayElements.push(clockOverlay);
+                }
+
                 overlayElements.forEach(element => {
-                    if (this.data.isVisible) {
-                        element.classList.remove('hidden');
-                    } else {
-                        element.classList.add('hidden');
+                    if (element) {
+                        if (this.data.isVisible) {
+                            element.classList.remove('hidden');
+                        } else {
+                            element.classList.add('hidden');
+                        }
                     }
                 });
             }
@@ -848,41 +878,47 @@
                         score: { home: 1, away: 0 },
                         teams: { home: 'FLAMENGO', away: 'VASCO' },
                         clock: { time: '15:30', period: '1º TEMPO' },
-                        colors: { home: '#E31E24', away: '#000000' } // Teste com cores
+                        colors: { home: '#E31E24', away: '#000000' },
+                        timer: { enabled: true, time: '15:30', isRunning: true }
                     },
                     {
                         score: { home: 2, away: 1 },
                         teams: { home: 'PALMEIRAS', away: 'CORINTHIANS' },
                         clock: { time: '38:42', period: '1º TEMPO' },
-                        colors: { home: '#28A745', away: '#FFFFFF' }
+                        colors: { home: '#28A745', away: '#FFFFFF' },
+                        timer: { enabled: false, time: '00:00', isRunning: false }
                     },
                     {
                         score: { home: 0, away: 2 },
                         teams: { home: 'SANTOS', away: 'SÃO PAULO' },
                         clock: { time: '67:15', period: '2º TEMPO' },
-                        colors: { home: '#000000', away: '#E31E24' }
+                        colors: { home: '#000000', away: '#E31E24' },
+                        timer: { enabled: true, time: '67:15', isRunning: false }
                     },
                     {
                         score: { home: 3, away: 3 },
                         teams: { home: 'GRÊMIO', away: 'INTERNACIONAL' },
                         clock: { time: '90:00', period: 'PRORROGAÇÃO' },
-                        colors: { home: '#0066CC', away: '#DC3545' }
+                        colors: { home: '#0066CC', away: '#DC3545' },
+                        timer: { enabled: true, time: '90:00', isRunning: true }
                     }
                 ];
                 
                 const randomData = testDataSets[Math.floor(Math.random() * testDataSets.length)];
                 
-                // Mesclar cores
+                // Mesclar cores se existirem
                 if (randomData.colors) {
                     this.data.colors = { ...this.data.colors, ...randomData.colors };
                 }
                 
+                // Mesclar todos os dados
                 this.data = { ...this.data, ...randomData };
                 this.updateDisplay();
                 
                 console.log('🎮 Dados de teste aplicados:', randomData);
+                console.log('⏱️ Timer enabled:', this.data.timer.enabled);
             }
-
+            
             forceReconnect() {
                 if (this.dataReader) {
                     this.dataReader.forceUpdate();

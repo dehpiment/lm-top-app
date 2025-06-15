@@ -21,33 +21,43 @@ let timerMaster = {
 };
 
 function startMasterTimer() {
-  if (timerMaster.interval) return; // Já está rodando
-  
-  timerMaster.isRunning = true;
-  timerMaster.interval = setInterval(() => {
-    if (timerMaster.mode === 'progressive') {
-      timerMaster.currentSeconds++;
-      if (timerMaster.currentSeconds >= timerMaster.maxTime) {
-        timerMaster.currentSeconds = timerMaster.maxTime;
-        pauseMasterTimer();
-        console.log('⏰ Timer: Tempo esgotado (progressivo)');
-      }
-    } else {
-      // Regressive
-      timerMaster.currentSeconds--;
-      if (timerMaster.currentSeconds <= 0) {
-        timerMaster.currentSeconds = 0;
-        pauseMasterTimer();
-        console.log('⏰ Timer: Tempo esgotado (regressivo)');
-      }
+    // 🆕 VERIFICAR SE TIMER ESTÁ HABILITADO
+    if (!overlayData.timer.enabled) {
+        console.log('⚠️ Tentativa de iniciar timer - Timer desabilitado');
+        return false;
     }
     
-    // Atualizar overlayData e fazer broadcast
-    updateTimerInOverlayData();
-    broadcastUpdate();
-  }, 1000);
-  
-  console.log(`▶️ Timer Master iniciado (${timerMaster.mode})`);
+    if (timerMaster.interval) {
+        console.log('⚠️ Timer já está rodando');
+        return false;
+    }
+    
+    timerMaster.isRunning = true;
+    timerMaster.interval = setInterval(() => {
+        if (timerMaster.mode === 'progressive') {
+            timerMaster.currentSeconds++;
+            if (timerMaster.currentSeconds >= timerMaster.maxTime) {
+                timerMaster.currentSeconds = timerMaster.maxTime;
+                pauseMasterTimer();
+                console.log('⏰ Timer: Tempo esgotado (progressivo)');
+            }
+        } else {
+            // Regressive
+            timerMaster.currentSeconds--;
+            if (timerMaster.currentSeconds <= 0) {
+                timerMaster.currentSeconds = 0;
+                pauseMasterTimer();
+                console.log('⏰ Timer: Tempo esgotado (regressivo)');
+            }
+        }
+        
+        // Atualizar overlayData e fazer broadcast
+        updateTimerInOverlayData();
+        broadcastUpdate();
+    }, 1000);
+    
+    console.log(`▶️ Timer Master iniciado (${timerMaster.mode}, enabled: ${overlayData.timer.enabled})`);
+    return true;
 }
 
 function pauseMasterTimer() {
@@ -103,37 +113,44 @@ function setTimerMode(mode, maxTime = null) {
 }
 
 function updateTimerInOverlayData() {
-  const minutes = Math.floor(timerMaster.currentSeconds / 60);
-  const seconds = timerMaster.currentSeconds % 60;
-  const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  
-  // Atualizar estrutura clock (para compatibilidade)
-  overlayData.clock.time = timeString;
-  
-  // Atualizar estrutura timer completa
-  overlayData.timer = {
-    time: timeString,
-    isRunning: timerMaster.isRunning,
-    mode: timerMaster.mode,
-    maxTime: timerMaster.maxTime,
-    currentSeconds: timerMaster.currentSeconds
-  };
+    const minutes = Math.floor(timerMaster.currentSeconds / 60);
+    const seconds = timerMaster.currentSeconds % 60;
+    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Atualizar estrutura clock (para compatibilidade)
+    overlayData.clock.time = timeString;
+    
+    // 🔧 PRESERVAR ENABLED STATE AO ATUALIZAR TIMER
+    const currentEnabled = overlayData.timer.enabled;
+    
+    // Atualizar estrutura timer completa
+    overlayData.timer = {
+        time: timeString,
+        isRunning: timerMaster.isRunning,
+        mode: timerMaster.mode,
+        maxTime: timerMaster.maxTime,
+        currentSeconds: timerMaster.currentSeconds,
+        enabled: currentEnabled // 🆕 PRESERVAR ENABLED
+    };
+    
+    console.log(`⏱️ Timer updated: ${timeString} (enabled: ${currentEnabled}, running: ${timerMaster.isRunning})`);
 }
 
 // Dados compartilhados entre as janelas
 let overlayData = {
-  score: { home: 0, away: 0 },
-  teams: { home: 'TIME A', away: 'TIME B' },
-  clock: { time: '00:00', period: '1º TEMPO' },
-  timer: {
-    time: '00:00',
-    isRunning: false,
-    mode: 'progressive',
-    maxTime: 2700,
-    currentSeconds: 0
-  },
-  isVisible: false,
-  theme: 'light'
+    score: { home: 0, away: 0 },
+    teams: { home: 'TIME A', away: 'TIME B' },
+    clock: { time: '00:00', period: '1º TEMPO' },
+    timer: {
+        time: '00:00',
+        isRunning: false,
+        mode: 'progressive',
+        maxTime: 2700,
+        currentSeconds: 0,
+        enabled: true // 🆕 ADICIONAR ESTA LINHA
+    },
+    isVisible: false,
+    theme: 'light'
 };
 
 // ===============================
@@ -339,51 +356,99 @@ async function serveDataJSON(res) {
 }
 
 async function updateDataFromDock(req, res) {
-  try {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      const newData = JSON.parse(body);
-      
-      // Verificar se há comandos de timer
-      if (newData.timerCommands) {
-        const cmd = newData.timerCommands;
-        
-        if (cmd.action === 'start') {
-          startMasterTimer();
-        } else if (cmd.action === 'pause') {
-          pauseMasterTimer();
-        } else if (cmd.action === 'reset') {
-          resetMasterTimer();
-        } else if (cmd.action === 'setMode') {
-          setTimerMode(cmd.mode, cmd.maxTime);
-        } else if (cmd.action === 'setTime') {
-          // Atualizar tempo manualmente
-          timerMaster.currentSeconds = cmd.seconds || 0;
-          updateTimerInOverlayData();
-        }
-      }
-      
-      // Atualizar outros dados (exceto timer que é centralizado)
-      const { timer, timerCommands, ...otherData } = newData;
-      overlayData = { ...overlayData, ...otherData };
-      
-      // Enviar para todas as janelas conectadas
-      broadcastUpdate();
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true }));
-      
-      console.log('📡 Dados atualizados pela dock:', {
-        timer: timerCommands ? `Comando: ${timerCommands.action}` : 'Sem mudanças',
-        other: Object.keys(otherData)
-      });
-    });
-  } catch (error) {
-    console.error('❌ Erro ao atualizar dados:', error);
-    res.writeHead(500);
-    res.end('{"error": "Failed to update data"}');
-  }
+    try {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            console.log('🔍 RAW DATA RECEIVED:', body); // ← DEBUG LOG
+            
+            const newData = JSON.parse(body);
+            console.log('🔍 PARSED DATA:', newData); // ← DEBUG LOG
+            
+            // Verificar se há comandos de timer
+            if (newData.timerCommands) {
+                const cmd = newData.timerCommands;
+                console.log('🔍 TIMER COMMANDS FOUND:', cmd); // ← DEBUG LOG
+                
+                // 🆕 PROCESSAR MUDANÇA DO ENABLED PRIMEIRO
+                if (cmd.enabled !== undefined) {
+                    const oldEnabled = overlayData.timer.enabled;
+                    overlayData.timer.enabled = cmd.enabled;
+                    
+                    console.log(`⏱️ Timer enabled: ${oldEnabled} → ${cmd.enabled}`);
+                    
+                    // 🔧 SE DESABILITOU O TIMER
+                    if (!cmd.enabled && oldEnabled) {
+                        pauseMasterTimer();
+                        
+                        // Reset timer para posição inicial baseado no modo
+                        if (timerMaster.mode === 'progressive') {
+                            timerMaster.currentSeconds = 0;
+                        } else {
+                            timerMaster.currentSeconds = timerMaster.maxTime;
+                        }
+                        
+                        updateTimerInOverlayData();
+                        console.log('⏹️ Timer pausado e resetado - Timer desabilitado');
+                    }
+                    
+                    // 🔧 SE HABILITOU O TIMER
+                    if (cmd.enabled && !oldEnabled) {
+                        console.log('✅ Timer habilitado - Pronto para uso');
+                    }
+                }
+                
+                // 🆕 PROCESSAR OUTROS COMANDOS APENAS SE TIMER HABILITADO
+                if (overlayData.timer.enabled) {
+                    if (cmd.action === 'start') {
+                        startMasterTimer();
+                    } else if (cmd.action === 'pause') {
+                        pauseMasterTimer();
+                    } else if (cmd.action === 'reset') {
+                        resetMasterTimer();
+                    } else if (cmd.action === 'setMode') {
+                        setTimerMode(cmd.mode, cmd.maxTime);
+                    } else if (cmd.action === 'setTime') {
+                        // Atualizar tempo manualmente
+                        timerMaster.currentSeconds = cmd.seconds || 0;
+                        updateTimerInOverlayData();
+                    }
+                } else {
+                    // 🚨 TIMER DESABILITADO - IGNORAR COMANDOS
+                    if (cmd.action && cmd.action !== 'setMode') {
+                        console.log(`⚠️ Timer command "${cmd.action}" ignorado - Timer desabilitado`);
+                    }
+                }
+            } else {
+                console.log('🔍 NO TIMER COMMANDS IN DATA'); // ← DEBUG LOG
+            }
+            
+            // Atualizar outros dados (exceto timer que é centralizado)
+            const { timer, timerCommands, ...otherData } = newData;
+            overlayData = { ...overlayData, ...otherData };
+            
+            // 🔧 FORÇAR BROADCAST SEMPRE APÓS MUDANÇAS
+            broadcastUpdate();
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+                success: true, 
+                timerEnabled: overlayData.timer.enabled,
+                currentTimer: overlayData.timer
+            }));
+            
+            console.log('📡 Dados atualizados pela dock:', {
+                timerCommand: newData.timerCommands?.action || 'none',
+                timerEnabled: overlayData.timer.enabled,
+                timerRunning: overlayData.timer.isRunning,
+                otherUpdates: Object.keys(otherData)
+            });
+        });
+    } catch (error) {
+        console.error('❌ Erro ao atualizar dados:', error);
+        res.writeHead(500);
+        res.end('{"error": "Failed to update data"}');
+    }
 }
 
 // ===============================
@@ -728,5 +793,14 @@ console.log(`   Output: http://localhost:${PORT}/output`);
 console.log(`   API: http://localhost:${PORT}/data`);
 console.log('');
 console.log('⏰ Timer Master: Centralizado e Sincronizado');
-console.log('=====================================');
+console.log('');
+console.log('🆕 ============================================');
+console.log('🆕 LiveMestre Overlay v1.2 - Timer ON/OFF');
+console.log('🆕 ============================================');
+console.log('🆕 Features:');
+console.log('   • Timer pode ser habilitado/desabilitado via dock');
+console.log('   • Commands processados apenas se timer.enabled = true');
+console.log('   • Estado persistente via localStorage');
+console.log('   • Sincronização completa dock ↔ main ↔ output');
+console.log('🆕 ============================================');
 console.log('');

@@ -301,7 +301,7 @@
 
         .timer-section:hover {
             border-color: var(--lm-yellow);
-            background: rgba(255, 215, 0, 0.15);
+            background: rgba(255, 215, 0, 0.08); /* ← Hover mais sutil */
         }
 
         /* ===============================
@@ -309,15 +309,7 @@
            =============================== */
 
         .timer-toggle-indicator {
-            position: absolute;
-            top: 4px;
-            left: 4px;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #28A745;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 6px rgba(40, 167, 69, 0.6);
+        display: none !important; /* ← OCULTAR COMPLETAMENTE */
         }
 
         .timer-toggle-indicator.disabled {
@@ -333,35 +325,39 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center; /* ← Já estava, mas garantir */
-            width: 100%;
-            height: 100%;
+            justify-content: center;
+            width: calc(100% - 16px); /* ← Reduzir largura para criar padding */
+            height: calc(100% - 16px); /* ← Reduzir altura para criar padding */
             gap: 4px;
             opacity: 1;
             transition: all 0.3s ease;
-            /* 🆕 FORÇAR CENTRALIZAÇÃO */
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            /* 🆕 ADICIONAR PADDING VISUAL */
+            padding: 8px;
+            background: rgba(255, 215, 0, 0.03); /* ← Sutil background amarelo */
+            border-radius: 6px;
         }
 
         .timer-content.hidden {
             opacity: 0;
             pointer-events: none;
-            transform: translate(-50%, -50%) scale(0.9); /* ← Manter centralização mesmo hidden */
+            transform: translate(-50%, -50%) scale(0.9);
         }
 
         .timer-mode-indicator {
             position: absolute;
-            top: 4px;
-            right: 4px;
+            top: 8px; /* ← Mover mais para baixo */
+            right: 8px; /* ← Mover mais para esquerda */
             font-size: 8px;
             color: var(--text-secondary);
-            background: rgba(0, 0, 0, 0.5);
-            padding: 1px 3px;
+            background: rgba(0, 0, 0, 0.7); /* ← Background mais escuro */
+            padding: 2px 4px; /* ← Padding maior */
             border-radius: 3px;
             font-weight: bold;
+            z-index: 20; /* ← Z-index maior para ficar acima */
         }
 
         .timer-mode-indicator.progressive {
@@ -380,14 +376,18 @@
             text-align: center;
             letter-spacing: 1px;
             cursor: pointer;
-            padding: 2px 6px;
+            padding: 4px 8px; /* ← Padding maior */
             border-radius: 4px;
             transition: all 0.2s ease;
+            /* 🆕 ADICIONAR BACKGROUND SUTIL */
+            background: rgba(255, 215, 0, 0.08);
+            border: 1px solid rgba(255, 215, 0, 0.2);
         }
 
         .timer-display:hover {
-            background: rgba(255, 215, 0, 0.1);
+            background: rgba(255, 215, 0, 0.15);
             transform: scale(1.02);
+            border-color: rgba(255, 215, 0, 0.4);
         }
 
         .timer-controls {
@@ -428,26 +428,32 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            /* 🆕 MELHORAR CONTRASTE */
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .timer-adjust-btn.minus {
             background: #DC3545;
             color: white;
+            border-color: #C82333;
         }
 
         .timer-adjust-btn.minus:hover {
             background: #C82333;
             transform: scale(1.05);
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.4);
         }
 
         .timer-adjust-btn.plus {
             background: #28A745;
             color: white;
+            border-color: #218838;
         }
 
         .timer-adjust-btn.plus:hover {
             background: #218838;
             transform: scale(1.05);
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.4);
         }
 
         .timer-btn:hover {
@@ -501,7 +507,6 @@
             opacity: 0;
             pointer-events: none;
             transition: all 0.3s ease;
-            /* 🆕 CENTRALIZAÇÃO ABSOLUTA */
             position: absolute;
             top: 50%;
             left: 50%;
@@ -511,11 +516,11 @@
         .vs-content.visible {
             opacity: 1;
             pointer-events: auto;
-            transform: translate(-50%, -50%) scale(1); /* ← Centralizado + scale normal */
+            transform: translate(-50%, -50%) scale(1);
         }
 
         .vs-display {
-            font-size: 28px; /* ← Reduzir de 32px para 28px */
+            font-size: 32px; /* ← Voltar para 32px, fica melhor */
             font-weight: 900;
             color: var(--lm-red);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
@@ -523,7 +528,8 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 0; /* ← Remover margin-bottom para ficar mais compacto */
+            margin: 0; /* ← Sem margins */
+            letter-spacing: 2px; /* ← Adicionar espaçamento entre letras */
         }
 
         .vs-subtitle {
@@ -696,9 +702,15 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             z-index: 10;
             border: 2px solid white;
-            /* 🆕 OCULTAR QUANDO TIMER DESABILITADO */
             opacity: 1;
-            transition: opacity 0.3s ease;
+            transition: all 0.3s ease;
+        }
+
+        /* 🆕 OCULTAR VS OVERLAY QUANDO TIMER DESABILITADO */
+        .vs-overlay.timer-disabled {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.8);
         }
 
         .vs-overlay.hidden {
@@ -1733,48 +1745,73 @@
             toggleTimerEnabled() {
                 this.data.timer.enabled = !this.data.timer.enabled;
                 
+                console.log('🔍 DOCK: Timer enabled changed to:', this.data.timer.enabled);
+                
+                // 🔧 FIX: Enviar comando específico e direto
+                const timerCommand = {
+                    timerCommands: {
+                        action: this.data.timer.enabled ? 'enable' : 'disable',
+                        enabled: this.data.timer.enabled
+                    }
+                };
+                
+                console.log('🔍 DOCK: Sending timer command:', timerCommand);
+                
                 // Se desabilitou o timer, resetar automaticamente
                 if (!this.data.timer.enabled) {
                     this.resetTimer();
-                    this.showNotification('Timer desabilitado e resetado!', 'info');
+                    this.showNotification('Timer desabilitado!', 'info');
                 } else {
                     this.showNotification('Timer habilitado!', 'success');
                 }
                 
+                // Atualizar visual ANTES de sincronizar
                 this.updateTimerDisplay();
                 this.updateConfigModal();
                 this.saveTimerConfig();
-                this.syncWithMain();
                 
-                console.log('⏱️ Timer enabled:', this.data.timer.enabled);
+                // 🔧 SYNC FORÇADO com comando específico
+                this.syncWithMain(timerCommand);
+                
+                console.log('🔍 DOCK: Toggle timer completed, state:', this.data.timer.enabled);
             }
+
 
             updateTimerDisplay() {
                 const timerContent = document.getElementById('timerContent');
                 const vsContent = document.getElementById('vsContent');
-                const indicator = document.getElementById('timerToggleIndicator');
+                const vsOverlay = document.querySelector('.vs-overlay'); // VS circular
                 
                 if (this.data.timer.enabled) {
-                    // Mostrar timer content
+                    // ✅ TIMER HABILITADO
                     timerContent.classList.remove('hidden');
                     timerContent.classList.add('visible');
                     vsContent.classList.remove('visible');
                     
-                    // Indicador verde (timer ligado)
-                    indicator.classList.remove('disabled');
+                    // 🆕 MOSTRAR VS overlay circular quando timer habilitado
+                    if (vsOverlay) {
+                        vsOverlay.classList.remove('timer-disabled');
+                    }
                     
                     // Atualizar display do timer
                     document.getElementById('timerDisplay').textContent = this.data.timer.time;
                     this.updateTimerModeIndicator();
                     this.updateTimerButtons();
+                    
+                    console.log('⏱️ Timer habilitado - Interface completa');
+                    
                 } else {
-                    // Mostrar VS content
+                    // ❌ TIMER DESABILITADO
                     timerContent.classList.add('hidden');
                     timerContent.classList.remove('visible');
                     vsContent.classList.add('visible');
                     
-                    // Indicador vermelho (timer desligado)
-                    indicator.classList.add('disabled');
+                    // 🆕 OCULTAR VS overlay circular quando timer desabilitado
+                    if (vsOverlay) {
+                        vsOverlay.classList.add('timer-disabled');
+                    }
+                    
+                    console.log('❌ Timer desabilitado - Modo VS simples');
                 }
             }
 
@@ -1835,27 +1872,189 @@
             }
 
             editTimer() {
-                if (!this.data.timer.enabled) return; // Só edita se timer habilitado
+                if (!this.data.timer.enabled) return; // ← Adicionar verificação Timer ON/OFF
                 
                 const display = document.getElementById('timerDisplay');
                 const currentTime = display.textContent;
                 
-                // Implementação igual ao original...
-                // (não mudou, só verifica enabled antes)
+                // Criar input field
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentTime;
+                input.id = 'timerEditInput'; // ← Adicionar ID para identificar
+                input.style.cssText = `
+                    font-family: 'Courier New', monospace;
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: var(--lm-yellow);
+                    background: rgba(255, 215, 0, 0.1);
+                    border: 2px solid var(--lm-yellow);
+                    border-radius: 4px;
+                    text-align: center;
+                    letter-spacing: 1px;
+                    padding: 2px 6px;
+                    width: 100%;
+                    outline: none;
+                    box-sizing: border-box;
+                `;
+                
+                // 🔧 FIX: Substituir com preservação da estrutura
+                const parent = display.parentNode;
+                parent.replaceChild(input, display);
+                
+                input.focus();
+                input.select();
+                
+                // 🔧 FIX: Função para finalizar edição mais robusta
+                const finishEdit = (save = true) => {
+                    // Verificar se input ainda existe (evitar double-finish)
+                    const currentInput = document.getElementById('timerEditInput');
+                    if (!currentInput) return;
+                    
+                    let newTime = null;
+                    
+                    if (save && currentInput.value.trim()) {
+                        newTime = this.parseTimeInput(currentInput.value.trim());
+                        if (newTime !== null) {
+                            this.applyNewTime(newTime);
+                            this.showNotification(`Timer: ${this.formatTimeFromSeconds(newTime)}`, 'success');
+                        } else {
+                            this.showNotification('Formato inválido! Use MM:SS ou MM', 'error');
+                        }
+                    }
+                    
+                    // 🔧 FIX: Restaurar display original corretamente
+                    const newDisplay = document.createElement('div');
+                    newDisplay.className = 'timer-display';
+                    newDisplay.id = 'timerDisplay';
+                    newDisplay.title = 'Duplo click para editar';
+                    newDisplay.textContent = this.data.timer.time;
+                    
+                    // Substituir input pelo display restaurado
+                    parent.replaceChild(newDisplay, currentInput);
+                    
+                    console.log('✅ Timer edit finalizado, display restaurado');
+                    
+                    // 🔧 FIX: Re-adicionar event listener
+                    newDisplay.addEventListener('dblclick', () => {
+                        this.editTimer();
+                    });
+                };
+                
+                // Event listeners do input
+                input.addEventListener('keydown', (e) => {
+                    e.stopPropagation(); // Evitar hotkeys globais
+                    
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        finishEdit(true);
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        finishEdit(false);
+                    }
+                });
+                
+                // 🔧 FIX: Blur com timeout para evitar conflitos
+                input.addEventListener('blur', (e) => {
+                    // Delay pequeno para permitir outros eventos
+                    setTimeout(() => {
+                        finishEdit(true);
+                    }, 100);
+                });
+                
+                console.log('✏️ Timer em modo de edição');
+            }
+
+            parseTimeInput(input) {
+                console.log(`🔍 Parsing input: "${input}"`);
+                
+                // Remover espaços e caracteres especiais, manter apenas números e :
+                const clean = input.replace(/[^\d:]/g, '');
+                
+                if (!clean) return null;
+                
+                let minutes = 0;
+                let seconds = 0;
+                
+                if (clean.includes(':')) {
+                    // Formato MM:SS ou :SS
+                    const parts = clean.split(':');
+                    if (parts.length === 2) {
+                        minutes = parseInt(parts[0]) || 0;
+                        seconds = parseInt(parts[1]) || 0;
+                    } else {
+                        console.log(`❌ Parse error: formato inválido "${clean}"`);
+                        return null;
+                    }
+                } else {
+                    // Formato MM (apenas minutos)
+                    minutes = parseInt(clean) || 0;
+                    seconds = 0;
+                }
+                
+                // Validações
+                if (minutes < 0 || seconds < 0 || seconds >= 60) {
+                    console.log(`❌ Parse error: valores inválidos ${minutes}:${seconds}`);
+                    return null;
+                }
+                
+                if (minutes > 99) {
+                    console.log(`❌ Parse error: minutos > 99`);
+                    return null;
+                }
+                
+                const totalSeconds = (minutes * 60) + seconds;
+                console.log(`✅ Parse success: "${input}" → ${minutes}:${seconds} = ${totalSeconds}s`);
+                return totalSeconds;
+            }
+
+            applyNewTime(seconds) {
+                console.log(`⏱️ Aplicando novo tempo: ${seconds}s`);
+                
+                // Enviar comando para main.js
+                this.sendTimerCommand('setTime', { seconds: seconds });
+                
+                // 🔧 FIX: Forçar atualização imediata dos dados locais
+                this.data.timer.currentSeconds = seconds;
+                this.data.timer.time = this.formatTimeFromSeconds(seconds);
+                
+                // 🔧 FIX: Forçar atualização do display
+                setTimeout(() => {
+                    const display = document.getElementById('timerDisplay');
+                    if (display) {
+                        display.textContent = this.data.timer.time;
+                        
+                        // Animação visual
+                        display.classList.add('timer-pulse');
+                        setTimeout(() => {
+                            display.classList.remove('timer-pulse');
+                        }, 600);
+                    }
+                }, 50);
+                
+                console.log(`✅ Tempo aplicado: ${this.formatTimeFromSeconds(seconds)}`);
+            }
+
+            formatTimeFromSeconds(totalSeconds) {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
 
             sendTimerCommand(action, params = {}) {
-                const timerCommand = {
-                    timerCommands: {
-                        action: action,
-                        enabled: this.data.timer.enabled, // 🆕 Enviar status enabled
-                        ...params
-                    }
-                };
+            const timerCommand = {
+                timerCommands: {
+                    action: action,
+                    enabled: this.data.timer.enabled, // ← Verificar se está sendo enviado
+                    ...params
+                }
+            };
 
-                this.syncWithMain(timerCommand);
-                console.log(`⏰ Timer Command: ${action}`, params);
-            }
+            console.log('🔍 DOCK: sendTimerCommand called:', timerCommand); // ← ADICIONAR
+
+            this.syncWithMain(timerCommand);
+            console.log(`⏰ Timer Command: ${action}`, params);
+        }
 
             updateTimerModeIndicator() {
                 const indicator = document.getElementById('timerModeIndicator');
@@ -2377,13 +2576,18 @@
             }
 
             async syncWithMain(additionalData = {}) {
-                if (this.isUpdatingFromExternal) return;
+                if (this.isUpdatingFromExternal) {
+                    console.log('🔍 DOCK: Sync skipped - updating from external');
+                    return;
+                }
 
                 try {
                     const dataToSend = {
                         ...this.data,
                         ...additionalData
                     };
+                    
+                    console.log('🔍 DOCK: Sending to /data:', dataToSend);
                     
                     const response = await fetch('/data', {
                         method: 'POST',
@@ -2392,10 +2596,13 @@
                     });
                     
                     if (response.ok) {
-                        console.log('✅ Sync successful');
+                        const result = await response.json();
+                        console.log('✅ DOCK: Sync successful, response:', result);
+                    } else {
+                        console.warn('⚠️ DOCK: Sync failed with status:', response.status);
                     }
                 } catch (error) {
-                    console.error('❌ Sync error:', error);
+                    console.error('❌ DOCK: Sync error:', error);
                 }
             }
 
