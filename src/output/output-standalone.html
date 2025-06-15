@@ -785,26 +785,53 @@
             }
 
             updateClock() {
-                const clockOverlay = document.getElementById('clockOverlay');
-                
-                // 🆕 ESCONDER CLOCK SE TIMER ESTIVER DESABILITADO
-                if (this.data.timer && !this.data.timer.enabled) {
-                    if (clockOverlay) {
-                        clockOverlay.classList.add('hidden');
-                    }
-                    console.log('⏰ Clock overlay oculto - Timer desabilitado');
-                    return;
-                }
-                
-                // Timer habilitado - mostrar clock normalmente
-                if (clockOverlay) {
-                    clockOverlay.classList.remove('hidden');
-                }
-                
-                // Atualizar conteúdo
-                document.getElementById('clockTime').textContent = this.data.clock.time;
-                document.getElementById('clockPeriod').textContent = this.data.clock.period;
-            }
+    const clockOverlay = document.getElementById('clockOverlay');
+    const clockTime = document.getElementById('clockTime');
+    
+    // 🆕 ESCONDER CLOCK SE TIMER ESTIVER DESABILITADO
+    if (this.data.timer && !this.data.timer.enabled) {
+        if (clockOverlay) {
+            clockOverlay.classList.add('hidden');
+        }
+        console.log('⏰ Clock overlay oculto - Timer desabilitado');
+        return;
+    }
+    
+    // Timer habilitado - mostrar clock normalmente
+    if (clockOverlay) {
+        clockOverlay.classList.remove('hidden');
+    }
+    
+    // 🆕 ATUALIZAR CLOCK COM NOVA FORMATAÇÃO
+    const timeString = this.data.timer?.time || this.data.clock.time;
+    
+    // Limpar classes anteriores
+    clockTime.classList.remove('milliseconds', 'no-leading-zero', 'running');
+    
+    // 🆕 DETECTAR SE TEM MILLISECONDS
+    if (timeString.includes('.')) {
+        const [mainTime, ms] = timeString.split('.');
+        clockTime.innerHTML = `${mainTime}.<span class="ms-part">${ms}</span>`;
+        clockTime.classList.add('milliseconds');
+        
+        // Adicionar animação se timer estiver rodando
+        if (this.data.timer?.isRunning) {
+            clockTime.classList.add('running');
+        }
+    } else {
+        clockTime.textContent = timeString;
+    }
+    
+    // 🆕 APLICAR CLASSE PARA REMOVE LEADING ZERO
+    if (this.data.timer?.removeLeadingZero) {
+        clockTime.classList.add('no-leading-zero');
+    }
+    
+    // Atualizar período
+    document.getElementById('clockPeriod').textContent = this.data.clock.period;
+    
+    console.log(`⏰ Clock atualizado: ${timeString} (formatação: ${this.data.timer?.removeLeadingZero ? 'sem zero' : 'padrão'}, ms: ${this.data.timer?.millisecondsMode ? 'ON' : 'OFF'})`);
+}
 
             // 🎨 Nova função para atualizar cores dos times
             updateTeamColors() {

@@ -493,6 +493,25 @@
             content: '▲';
         }
 
+        .timer-preview {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--lm-yellow);
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+            padding: 4px 8px;
+            text-align: center;
+            min-width: 80px;
+            transition: all 0.2s ease;
+        }
+
+        .timer-preview:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+
         /* ===============================
            🆕 VS CONTENT (QUANDO DESABILITADO)
            =============================== */
@@ -1430,6 +1449,40 @@
                                max="99">
                     </div>
                 </div>
+
+                <div class="config-section">
+                <h3>🎨 Formatação do Timer</h3>
+                
+                <div class="config-option">
+                    <div>
+                        <div class="config-option-label">Remover Zero à Esquerda</div>
+                        <div class="config-option-desc">5:35 em vez de 05:35 (melhor para displays menores)</div>
+                    </div>
+                    <div class="config-option-control">
+                        <div class="config-toggle" id="removeZeroToggle"></div>
+                    </div>
+                </div>
+                
+                <div class="config-option">
+                    <div>
+                        <div class="config-option-label">Modo Milissegundos</div>
+                        <div class="config-option-desc">Precisão de centésimos no último minuto (futsal/basquete)</div>
+                    </div>
+                    <div class="config-option-control">
+                        <div class="config-toggle" id="millisecondsToggle"></div>
+                    </div>
+                </div>
+                
+                <div class="config-option">
+                    <div>
+                        <div class="config-option-label">Preview do Timer</div>
+                        <div class="config-option-desc">Como ficará no overlay</div>
+                    </div>
+                    <div class="config-option-control">
+                        <div class="timer-preview" id="timerPreview">05:35</div>
+                    </div>
+                </div>
+            </div>
             </div>
             
             <div class="config-section">
@@ -1675,6 +1728,38 @@
                 document.getElementById('awayTeamName').addEventListener('dblclick', () => {
                     this.editTeamName('away');
                 });
+                
+                // 🆕 TIMER FORMAT EVENT LISTENERS
+                document.getElementById('removeZeroToggle').addEventListener('click', () => {
+                    this.data.timer.removeLeadingZero = !this.data.timer.removeLeadingZero;
+                    this.updateConfigModal();
+                    this.updateTimerPreview();
+                    this.saveTimerFormatConfig();
+                    
+                    this.showNotification(
+                        this.data.timer.removeLeadingZero ? 
+                        'Formato sem zero ativado!' : 
+                        'Formato padrão ativado!'
+                    );
+                });
+
+                document.getElementById('millisecondsToggle').addEventListener('click', () => {
+                    this.data.timer.millisecondsMode = !this.data.timer.millisecondsMode;
+                    this.updateConfigModal();
+                    this.updateTimerPreview();
+                    this.saveTimerFormatConfig();
+                    
+                    // Enviar comando de precisão para main.js
+                    this.sendTimerCommand('setPrecision', {
+                        millisecondsMode: this.data.timer.millisecondsMode
+                    });
+                    
+                    this.showNotification(
+                        this.data.timer.millisecondsMode ? 
+                        'Modo alta precisão ativado!' : 
+                        'Modo precisão normal ativado!'
+                    );
+                });
             }
 
             setupHotkeys() {
@@ -1775,7 +1860,6 @@
                 
                 console.log('🔍 DOCK: Toggle timer completed, state:', this.data.timer.enabled);
             }
-
 
             updateTimerDisplay() {
                 const timerContent = document.getElementById('timerContent');
@@ -2086,6 +2170,59 @@
                 }
             }
 
+            updateTimerPreview() {
+            const preview = document.getElementById('timerPreview');
+            if (!preview) return;
+            
+            let previewTime;
+            
+            if (this.data.timer.removeLeadingZero) {
+                if (this.data.timer.millisecondsMode) {
+                    previewTime = '1:23<span class="ms-part">.45</span>';  // Último minuto com ms
+                    preview.innerHTML = previewTime;
+                    preview.classList.add('milliseconds');
+                } else {
+                    previewTime = '5:35';     // Sem zero à esquerda
+                    preview.textContent = previewTime;
+                    preview.classList.remove('milliseconds');
+                }
+            } else {
+                if (this.data.timer.millisecondsMode) {
+                    previewTime = '01:23<span class="ms-part">.45</span>'; // Último minuto com ms + zero
+                    preview.innerHTML = previewTime;
+                    preview.classList.add('milliseconds');
+                } else {
+                    previewTime = '05:35';    // Formato padrão
+                    preview.textContent = previewTime;
+                    preview.classList.remove('milliseconds');
+                }
+            }
+        }
+
+        saveTimerFormatConfig() {
+            const formatConfig = {
+                removeLeadingZero: this.data.timer.removeLeadingZero,
+                millisecondsMode: this.data.timer.millisecondsMode
+            };
+            localStorage.setItem('lm-timer-format', JSON.stringify(formatConfig));
+            
+            // Sincronizar com main.js
+            this.sendTimerCommand('setFormat', formatConfig);
+            
+            console.log('💾 Configuração de formato salva:', formatConfig);
+        }
+
+        loadTimerFormatConfig() {
+            const saved = localStorage.getItem('lm-timer-format');
+            if (saved) {
+                const config = JSON.parse(saved);
+                this.data.timer.removeLeadingZero = config.removeLeadingZero || false;
+                this.data.timer.millisecondsMode = config.millisecondsMode || false;
+                
+                console.log('📂 Configuração de formato carregada:', config);
+            }
+        }
+
             // ===============================
             // SCORE MANAGEMENT
             // ===============================
@@ -2252,6 +2389,23 @@
                 // Timer mode e duration
                 document.getElementById('timerModeSelect').value = this.data.timer.mode || 'progressive';
                 document.getElementById('timerDurationInput').value = Math.floor((this.data.timer.maxTime || 2700) / 60);
+
+                // 🆕 TIMER FORMAT TOGGLES
+                const removeZeroToggle = document.getElementById('removeZeroToggle');
+                if (this.data.timer.removeLeadingZero) {
+                    removeZeroToggle.classList.add('active');
+                } else {
+                    removeZeroToggle.classList.remove('active');
+                }
+                
+                const millisecondsToggle = document.getElementById('millisecondsToggle');
+                if (this.data.timer.millisecondsMode) {
+                    millisecondsToggle.classList.add('active');
+                } else {
+                    millisecondsToggle.classList.remove('active');
+                }
+                
+                this.updateTimerPreview();
             }
 
             saveConfig() {
@@ -2497,10 +2651,13 @@
                     const config = JSON.parse(saved);
                     this.data.timer.mode = config.mode || 'progressive';
                     this.data.timer.maxTime = config.maxTime || 2700;
-                    this.data.timer.enabled = config.enabled !== undefined ? config.enabled : true; // 🆕 Padrão: true
+                    this.data.timer.enabled = config.enabled !== undefined ? config.enabled : true;
                     
                     console.log('📂 Timer config carregada:', config);
                 }
+                
+                // 🆕 CARREGAR CONFIGURAÇÃO DE FORMATO
+                this.loadTimerFormatConfig();
                 
                 // Enviar config inicial para main.js
                 this.sendTimerCommand('setMode', {
@@ -2508,7 +2665,13 @@
                     maxTime: this.data.timer.maxTime
                 });
                 
-                console.log('⚙️ Timer inicializado:', this.data.timer);
+                // 🆕 ENVIAR CONFIGURAÇÃO DE FORMATO
+                this.sendTimerCommand('setFormat', {
+                    removeLeadingZero: this.data.timer.removeLeadingZero,
+                    millisecondsMode: this.data.timer.millisecondsMode
+                });
+                
+                console.log('⚙️ Timer inicializado com formatação:', this.data.timer);
             }
 
             // ===============================

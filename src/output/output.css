@@ -388,6 +388,36 @@ body {
   margin-bottom: 5px;
 }
 
+/* Timer com milliseconds */
+.clock-time.milliseconds {
+    font-size: 42px; /* Ligeiramente menor para caber .ms */
+    letter-spacing: 1px;
+}
+
+/* Timer sem zero à esquerda */
+.clock-time.no-leading-zero {
+    letter-spacing: 3px; /* Mais espaço para números assimétricos */
+}
+
+/* Parte dos milliseconds (.45) */
+.clock-time .ms-part {
+    font-size: 0.7em;
+    opacity: 0.9;
+    color: #FFE55C;
+    font-weight: 800;
+    margin-left: 1px;
+}
+
+/* Animação quando milliseconds estão ativos */
+.clock-time.milliseconds.running .ms-part {
+    animation: msFlicker 0.1s ease-in-out infinite alternate;
+}
+
+@keyframes msFlicker {
+    0% { opacity: 0.9; }
+    100% { opacity: 1; }
+}
+
 /* ===============================
    ANIMATIONS
    =============================== */

@@ -20,8 +20,33 @@ let timerMaster = {
   interval: null
 };
 
+// 🆕 TIMER FORMATTING FUNCTION
+function formatTimerDisplay(seconds, milliseconds = 0) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    
+    // Base format MM:SS
+    let timeString;
+    
+    if (overlayData.timer.removeLeadingZero && minutes < 10) {
+        // Remove leading zero: 5:35 instead of 05:35
+        timeString = `${minutes}:${secs.toString().padStart(2, '0')}`;
+    } else {
+        // Standard format: 05:35
+        timeString = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    // Add milliseconds in last minute when mode is active
+    if (overlayData.timer.millisecondsMode && minutes <= 1 && overlayData.timer.isRunning) {
+        const cs = Math.floor(milliseconds / 10); // Centiseconds (0-99)
+        timeString += `.${cs.toString().padStart(2, '0')}`;
+    }
+    
+    return timeString;
+}
+
 function startMasterTimer() {
-    // 🆕 VERIFICAR SE TIMER ESTÁ HABILITADO
+    // Verificar se timer está habilitado
     if (!overlayData.timer.enabled) {
         console.log('⚠️ Tentativa de iniciar timer - Timer desabilitado');
         return false;
@@ -33,30 +58,61 @@ function startMasterTimer() {
     }
     
     timerMaster.isRunning = true;
+    let lastTime = Date.now();
+    
+    // 🆕 PRECISION INTERVAL: 50ms for milliseconds mode, 1000ms for normal
+    const intervalDuration = overlayData.timer.millisecondsMode ? 50 : 1000;
+    
     timerMaster.interval = setInterval(() => {
+        if (overlayData.timer.millisecondsMode) {
+            // 🆕 HIGH PRECISION MODE
+            const currentTime = Date.now();
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            overlayData.timer.currentMilliseconds += deltaTime;
+            
+            // Convert ms to seconds when needed
+            if (overlayData.timer.currentMilliseconds >= 1000) {
+                const secondsToAdd = Math.floor(overlayData.timer.currentMilliseconds / 1000);
+                overlayData.timer.currentMilliseconds %= 1000;
+                
+                if (timerMaster.mode === 'progressive') {
+                    timerMaster.currentSeconds += secondsToAdd;
+                } else {
+                    timerMaster.currentSeconds -= secondsToAdd;
+                }
+            }
+        } else {
+            // NORMAL MODE: 1 second increments
+            if (timerMaster.mode === 'progressive') {
+                timerMaster.currentSeconds++;
+            } else {
+                timerMaster.currentSeconds--;
+            }
+        }
+        
+        // Check limits
         if (timerMaster.mode === 'progressive') {
-            timerMaster.currentSeconds++;
             if (timerMaster.currentSeconds >= timerMaster.maxTime) {
                 timerMaster.currentSeconds = timerMaster.maxTime;
                 pauseMasterTimer();
                 console.log('⏰ Timer: Tempo esgotado (progressivo)');
             }
         } else {
-            // Regressive
-            timerMaster.currentSeconds--;
             if (timerMaster.currentSeconds <= 0) {
                 timerMaster.currentSeconds = 0;
+                overlayData.timer.currentMilliseconds = 0;
                 pauseMasterTimer();
                 console.log('⏰ Timer: Tempo esgotado (regressivo)');
             }
         }
         
-        // Atualizar overlayData e fazer broadcast
         updateTimerInOverlayData();
         broadcastUpdate();
-    }, 1000);
+    }, intervalDuration);
     
-    console.log(`▶️ Timer Master iniciado (${timerMaster.mode}, enabled: ${overlayData.timer.enabled})`);
+    console.log(`▶️ Timer Master iniciado (${timerMaster.mode}, precision: ${overlayData.timer.millisecondsMode ? 'HIGH' : 'NORMAL'})`);
     return true;
 }
 
@@ -113,27 +169,34 @@ function setTimerMode(mode, maxTime = null) {
 }
 
 function updateTimerInOverlayData() {
-    const minutes = Math.floor(timerMaster.currentSeconds / 60);
-    const seconds = timerMaster.currentSeconds % 60;
-    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    // 🆕 USE NEW FORMATTING FUNCTION
+    const timeString = formatTimerDisplay(
+        timerMaster.currentSeconds, 
+        overlayData.timer.currentMilliseconds || 0
+    );
     
-    // Atualizar estrutura clock (para compatibilidade)
+    // Update clock (for compatibility)
     overlayData.clock.time = timeString;
     
-    // 🔧 PRESERVAR ENABLED STATE AO ATUALIZAR TIMER
+    // Preserve enabled state and format settings
     const currentEnabled = overlayData.timer.enabled;
+    const currentRemoveZero = overlayData.timer.removeLeadingZero;
+    const currentMsMode = overlayData.timer.millisecondsMode;
     
-    // Atualizar estrutura timer completa
+    // Update complete timer structure
     overlayData.timer = {
         time: timeString,
         isRunning: timerMaster.isRunning,
         mode: timerMaster.mode,
         maxTime: timerMaster.maxTime,
         currentSeconds: timerMaster.currentSeconds,
-        enabled: currentEnabled // 🆕 PRESERVAR ENABLED
+        currentMilliseconds: overlayData.timer.currentMilliseconds || 0,
+        enabled: currentEnabled,
+        removeLeadingZero: currentRemoveZero,
+        millisecondsMode: currentMsMode
     };
     
-    console.log(`⏱️ Timer updated: ${timeString} (enabled: ${currentEnabled}, running: ${timerMaster.isRunning})`);
+    console.log(`⏱️ Timer: ${timeString} (zero: ${currentRemoveZero ? 'OFF' : 'ON'}, ms: ${currentMsMode ? 'ON' : 'OFF'})`);
 }
 
 // Dados compartilhados entre as janelas
@@ -147,7 +210,11 @@ let overlayData = {
         mode: 'progressive',
         maxTime: 2700,
         currentSeconds: 0,
-        enabled: true // 🆕 ADICIONAR ESTA LINHA
+        enabled: true,
+        // 🆕 NEW PROPERTIES v1.2.1
+        removeLeadingZero: false,    // 05:35 → 5:35
+        millisecondsMode: false,     // Show .ms in last minute
+        currentMilliseconds: 0       // For ms precision
     },
     isVisible: false,
     theme: 'light'
@@ -388,6 +455,9 @@ async function updateDataFromDock(req, res) {
                             timerMaster.currentSeconds = timerMaster.maxTime;
                         }
                         
+                        // 🆕 RESETAR MILLISECONDS TAMBÉM
+                        overlayData.timer.currentMilliseconds = 0;
+                        
                         updateTimerInOverlayData();
                         console.log('⏹️ Timer pausado e resetado - Timer desabilitado');
                     }
@@ -396,6 +466,48 @@ async function updateDataFromDock(req, res) {
                     if (cmd.enabled && !oldEnabled) {
                         console.log('✅ Timer habilitado - Pronto para uso');
                     }
+                }
+                
+                // 🆕 PROCESSAR COMANDOS DE FORMATAÇÃO (sempre processa, mesmo com timer desabilitado)
+                if (cmd.action === 'setFormat') {
+                    overlayData.timer.removeLeadingZero = cmd.removeLeadingZero || false;
+                    overlayData.timer.millisecondsMode = cmd.millisecondsMode || false;
+                    
+                    // Resetar milliseconds se desabilitado
+                    if (!cmd.millisecondsMode) {
+                        overlayData.timer.currentMilliseconds = 0;
+                    }
+                    
+                    // Reiniciar timer com nova precisão se estiver rodando
+                    if (timerMaster.isRunning) {
+                        pauseMasterTimer();
+                        startMasterTimer();
+                    }
+                    
+                    updateTimerInOverlayData();
+                    console.log('⚙️ Formato do timer atualizado:', cmd);
+                }
+                
+                // 🆕 PROCESSAR COMANDO DE PRECISÃO
+                if (cmd.action === 'setPrecision') {
+                    const wasRunning = timerMaster.isRunning;
+                    
+                    if (wasRunning) {
+                        pauseMasterTimer();
+                    }
+                    
+                    overlayData.timer.millisecondsMode = cmd.millisecondsMode || false;
+                    
+                    if (!cmd.millisecondsMode) {
+                        overlayData.timer.currentMilliseconds = 0;
+                    }
+                    
+                    if (wasRunning) {
+                        startMasterTimer();
+                    }
+                    
+                    updateTimerInOverlayData();
+                    console.log('🎯 Precisão do timer atualizada:', cmd.millisecondsMode ? 'ALTA' : 'NORMAL');
                 }
                 
                 // 🆕 PROCESSAR OUTROS COMANDOS APENAS SE TIMER HABILITADO
@@ -411,11 +523,13 @@ async function updateDataFromDock(req, res) {
                     } else if (cmd.action === 'setTime') {
                         // Atualizar tempo manualmente
                         timerMaster.currentSeconds = cmd.seconds || 0;
+                        // 🆕 RESETAR MILLISECONDS AO DEFINIR TEMPO MANUAL
+                        overlayData.timer.currentMilliseconds = 0;
                         updateTimerInOverlayData();
                     }
                 } else {
-                    // 🚨 TIMER DESABILITADO - IGNORAR COMANDOS
-                    if (cmd.action && cmd.action !== 'setMode') {
+                    // 🚨 TIMER DESABILITADO - IGNORAR COMANDOS DE CONTROLE
+                    if (cmd.action && !['setMode', 'setFormat', 'setPrecision'].includes(cmd.action)) {
                         console.log(`⚠️ Timer command "${cmd.action}" ignorado - Timer desabilitado`);
                     }
                 }
@@ -434,13 +548,20 @@ async function updateDataFromDock(req, res) {
             res.end(JSON.stringify({ 
                 success: true, 
                 timerEnabled: overlayData.timer.enabled,
-                currentTimer: overlayData.timer
+                currentTimer: overlayData.timer,
+                // 🆕 INCLUIR INFO DE FORMATAÇÃO NA RESPOSTA
+                timerFormat: {
+                    removeLeadingZero: overlayData.timer.removeLeadingZero,
+                    millisecondsMode: overlayData.timer.millisecondsMode
+                }
             }));
             
             console.log('📡 Dados atualizados pela dock:', {
                 timerCommand: newData.timerCommands?.action || 'none',
                 timerEnabled: overlayData.timer.enabled,
                 timerRunning: overlayData.timer.isRunning,
+                // 🆕 LOG DE FORMATAÇÃO
+                timerFormat: `zero: ${overlayData.timer.removeLeadingZero ? 'OFF' : 'ON'}, ms: ${overlayData.timer.millisecondsMode ? 'ON' : 'OFF'}`,
                 otherUpdates: Object.keys(otherData)
             });
         });
