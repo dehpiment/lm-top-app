@@ -681,28 +681,37 @@
         }
 
         class OverlayOutput {
-            constructor() {
-                this.data = {
-                    score: { home: 0, away: 0 },
-                    teams: { home: 'AGUARDANDO', away: 'CONEXÃO' },
-                    clock: { time: '--:--', period: 'CARREGANDO' },
-                    colors: { home: '#E31E24', away: '#0066CC' },
-                    timer: { 
-                        enabled: true, // 🆕 ADICIONAR PROPRIEDADE ENABLED
-                        time: '--:--',
-                        isRunning: false 
-                    },
-                    isVisible: true,
-                    theme: 'light'
-                };
-                
-                this.sponsorsData = [];
-                this.currentSponsorIndex = 0;
-                this.sponsorInterval = null;
-                
-                this.init();
-            }
-
+        constructor() {
+            this.data = {
+                score: { home: 0, away: 0 },
+                teams: { home: 'AGUARDANDO', away: 'CONEXÃO' },
+                clock: { time: '--:--', period: 'CARREGANDO' },
+                colors: { home: '#E31E24', away: '#0066CC' },
+                timer: { 
+                    enabled: true,
+                    time: '--:--',
+                    isRunning: false,
+                    // 🆕 TIMER FORMAT PROPERTIES
+                    removeLeadingZero: false,
+                    millisecondsMode: false,
+                    currentMilliseconds: 0
+                },
+                isVisible: true,
+                theme: 'light'
+            };
+            
+            // 🆕 TEMPORARY CONFIG VARIABLES (não aplicam até clicar "Salvar")
+            this.tempConfig = {
+                removeLeadingZero: false,
+                millisecondsMode: false
+            };
+            
+            this.sponsorsData = [];
+            this.currentSponsorIndex = 0;
+            this.sponsorInterval = null;
+            
+            this.init();
+        }
             init() {
                 this.setupDataSync();
                 this.setupEventListeners();
@@ -751,6 +760,32 @@
                     if (e.ctrlKey && e.shiftKey && e.code === 'KeyS') {
                         this.toggleSponsors();
                     }
+
+                    // 🆕 Ctrl+Shift+F = Test Timer Formats
+                    if (e.ctrlKey && e.shiftKey && e.code === 'KeyF') {
+                        this.testTimerFormats();
+                    }
+                });
+
+                // 🆕 TIMER FORMAT EVENT LISTENERS (SEM APLICAÇÃO IMEDIATA)
+                document.getElementById('removeZeroToggle').addEventListener('click', () => {
+                    // 🔧 SÓ ATUALIZA VARIÁVEL TEMPORÁRIA
+                    this.tempConfig.removeLeadingZero = !this.tempConfig.removeLeadingZero;
+                    this.updateConfigModal();
+                    this.updateTimerPreview(); // Só preview, não aplica
+                    
+                    // 🚫 REMOVIDO: saveTimerFormatConfig() e showNotification()
+                    console.log('📝 Config temp: removeLeadingZero =', this.tempConfig.removeLeadingZero);
+                });
+
+                document.getElementById('millisecondsToggle').addEventListener('click', () => {
+                    // 🔧 SÓ ATUALIZA VARIÁVEL TEMPORÁRIA
+                    this.tempConfig.millisecondsMode = !this.tempConfig.millisecondsMode;
+                    this.updateConfigModal();
+                    this.updateTimerPreview(); // Só preview, não aplica
+                    
+                    // 🚫 REMOVIDO: sendTimerCommand(), saveTimerFormatConfig() e showNotification()
+                    console.log('📝 Config temp: millisecondsMode =', this.tempConfig.millisecondsMode);
                 });
 
                 // Auto-hide status after initial display

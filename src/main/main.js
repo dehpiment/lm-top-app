@@ -25,21 +25,28 @@ function formatTimerDisplay(seconds, milliseconds = 0) {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     
-    // Base format MM:SS
+    // 🔧 REGRA DOS MILLISECONDS: Só quando < 1:00 (menos de 60 segundos)
+    const showMilliseconds = overlayData.timer.millisecondsMode && 
+                            overlayData.timer.isRunning && 
+                            seconds < 60; // ← Menos de 60 segundos
+    
     let timeString;
     
-    if (overlayData.timer.removeLeadingZero && minutes < 10) {
-        // Remove leading zero: 5:35 instead of 05:35
-        timeString = `${minutes}:${secs.toString().padStart(2, '0')}`;
+    if (showMilliseconds) {
+        // 🆕 FORMATO ESPECIAL: Só segundos + milliseconds (sem minutos)
+        const cs = Math.floor(milliseconds / 10); // Centésimos (0-99)
+        timeString = `${secs}.${cs.toString().padStart(2, '0')}`;
+        
+        console.log(`⏱️ Milliseconds mode: ${seconds}s → ${timeString}`);
     } else {
-        // Standard format: 05:35
-        timeString = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    
-    // Add milliseconds in last minute when mode is active
-    if (overlayData.timer.millisecondsMode && minutes <= 1 && overlayData.timer.isRunning) {
-        const cs = Math.floor(milliseconds / 10); // Centiseconds (0-99)
-        timeString += `.${cs.toString().padStart(2, '0')}`;
+        // FORMATO NORMAL MM:SS
+        if (overlayData.timer.removeLeadingZero && minutes < 10) {
+            // Remove leading zero: 5:35 instead of 05:35
+            timeString = `${minutes}:${secs.toString().padStart(2, '0')}`;
+        } else {
+            // Standard format: 05:35
+            timeString = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
     }
     
     return timeString;
@@ -59,17 +66,27 @@ function startMasterTimer() {
     
     timerMaster.isRunning = true;
     let lastTime = Date.now();
+    let currentIntervalDuration = null;
     
-    // 🆕 PRECISION INTERVAL: 50ms for milliseconds mode, 1000ms for normal
-    const intervalDuration = overlayData.timer.millisecondsMode ? 50 : 1000;
+    // 🆕 FUNÇÃO PARA CALCULAR INTERVAL NECESSÁRIO
+    const getRequiredInterval = () => {
+        const needsPrecision = overlayData.timer.millisecondsMode && timerMaster.currentSeconds < 60;
+        return needsPrecision ? 33 : 1000;
+    };
     
-    timerMaster.interval = setInterval(() => {
-        if (overlayData.timer.millisecondsMode) {
-            // 🆕 HIGH PRECISION MODE
-            const currentTime = Date.now();
-            const deltaTime = currentTime - lastTime;
-            lastTime = currentTime;
-            
+    // 🆕 FUNÇÃO RECURSIVA QUE AJUSTA O INTERVAL DINAMICAMENTE
+    const timerLoop = () => {
+        if (!timerMaster.isRunning) return; // Safety check
+        
+        const currentTime = Date.now();
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+        
+        // Determinar se usa precision
+        const usePrecision = overlayData.timer.millisecondsMode && timerMaster.currentSeconds < 60;
+        
+        if (usePrecision) {
+            // HIGH PRECISION MODE (< 60 segundos com 30fps)
             overlayData.timer.currentMilliseconds += deltaTime;
             
             // Convert ms to seconds when needed
@@ -90,6 +107,9 @@ function startMasterTimer() {
             } else {
                 timerMaster.currentSeconds--;
             }
+            
+            // Resetar milliseconds quando não está abaixo de 60s
+            overlayData.timer.currentMilliseconds = 0;
         }
         
         // Check limits
@@ -98,6 +118,7 @@ function startMasterTimer() {
                 timerMaster.currentSeconds = timerMaster.maxTime;
                 pauseMasterTimer();
                 console.log('⏰ Timer: Tempo esgotado (progressivo)');
+                return;
             }
         } else {
             if (timerMaster.currentSeconds <= 0) {
@@ -105,27 +126,46 @@ function startMasterTimer() {
                 overlayData.timer.currentMilliseconds = 0;
                 pauseMasterTimer();
                 console.log('⏰ Timer: Tempo esgotado (regressivo)');
+                return;
             }
         }
         
         updateTimerInOverlayData();
         broadcastUpdate();
-    }, intervalDuration);
+        
+        // 🔧 CALCULAR PRÓXIMO INTERVAL DINAMICAMENTE
+        const requiredInterval = getRequiredInterval();
+        
+        // 🔧 LOG QUANDO MUDA DE PRECISÃO
+        if (requiredInterval !== currentIntervalDuration) {
+            currentIntervalDuration = requiredInterval;
+            const mode = requiredInterval === 33 ? '30FPS' : 'NORMAL';
+            console.log(`⏱️ Timer interval mudou para: ${requiredInterval}ms (${mode}) em ${timerMaster.currentSeconds}s`);
+        }
+        
+        // 🆕 AGENDAR PRÓXIMA EXECUÇÃO COM INTERVAL CORRETO
+        timerMaster.interval = setTimeout(timerLoop, requiredInterval);
+    };
     
-    console.log(`▶️ Timer Master iniciado (${timerMaster.mode}, precision: ${overlayData.timer.millisecondsMode ? 'HIGH' : 'NORMAL'})`);
+    // 🆕 INICIAR PRIMEIRO CICLO
+    currentIntervalDuration = getRequiredInterval();
+    console.log(`▶️ Timer Master iniciado (${timerMaster.mode}, interval inicial: ${currentIntervalDuration}ms)`);
+    
+    timerLoop();
+    
     return true;
 }
 
 function pauseMasterTimer() {
-  if (timerMaster.interval) {
-    clearInterval(timerMaster.interval);
-    timerMaster.interval = null;
-  }
-  timerMaster.isRunning = false;
-  
-  updateTimerInOverlayData();
-  broadcastUpdate();
-  console.log('⏸️ Timer Master pausado');
+    if (timerMaster.interval) {
+        clearTimeout(timerMaster.interval); // ← clearTimeout em vez de clearInterval
+        timerMaster.interval = null;
+    }
+    timerMaster.isRunning = false;
+    
+    updateTimerInOverlayData();
+    broadcastUpdate();
+    console.log('⏸️ Timer Master pausado');
 }
 
 function resetMasterTimer() {
